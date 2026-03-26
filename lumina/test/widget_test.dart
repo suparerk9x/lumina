@@ -1,0 +1,13 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:lumina/app.dart';
+
+void main() {
+  testWidgets('App renders home screen', (WidgetTester tester) async {
+    await tester.pumpWidget(const LuminaApp());
+
+    expect(find.text('ฝึกสมอง'), findsWidgets);
+    expect(find.text('ประเมิน'), findsOneWidget);
+    expect(find.text('จำกัดเวลา'), findsOneWidget);
+  });
+}
