@@ -3,11 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants.dart';
 import 'core/theme.dart';
-import 'features/home/home_screen.dart';
 import 'features/settings/settings_provider.dart';
-
-/// ไฟล์นี้กำหนด Widget หลักของแอป Lumina
-/// ทำหน้าที่ตั้งค่า MaterialApp รวมถึงธีม ฟอนต์ และหน้าแรก
+import 'features/splash/splash_screen.dart';
 
 /// Widget หลักของแอป ใช้ ConsumerWidget เพื่อดึงค่าการตั้งค่าจาก Riverpod
 class LuminaApp extends ConsumerWidget {
@@ -15,21 +12,32 @@ class LuminaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ดึงค่าการตั้งค่าปัจจุบัน (ขนาดฟอนต์, ชนิดฟอนต์) แบบ reactive
-    // ถ้าผู้ใช้เปลี่ยนการตั้งค่า หน้าจอจะอัปเดตอัตโนมัติ
     final settings = ref.watch(settingsProvider);
+
+    // แปลง AppThemeMode เป็น Flutter ThemeMode
+    final themeMode = switch (settings.themeMode) {
+      AppThemeMode.light => ThemeMode.light,
+      AppThemeMode.dark => ThemeMode.dark,
+      AppThemeMode.system => ThemeMode.system,
+    };
 
     return MaterialApp(
       title: AppConstants.appName,
-      // ใช้ธีมสว่าง โดยปรับขนาดและชนิดฟอนต์ตามที่ผู้ใช้ตั้งไว้
+      // ธีมสว่าง
       theme: AppTheme.lightTheme(
         fontScale: settings.fontScale.value,
         fontFamily: settings.appFont.family,
+        bgColor: settings.lightBgColor,
       ),
-      // ซ่อนป้าย "DEBUG" มุมขวาบน
+      // ธีมมืด
+      darkTheme: AppTheme.darkTheme(
+        fontScale: settings.fontScale.value,
+        fontFamily: settings.appFont.family,
+        bgColor: settings.darkBgColor,
+      ),
+      themeMode: themeMode,
       debugShowCheckedModeBanner: false,
-      // กำหนดหน้าแรกของแอปเป็น HomeScreen
-      home: const HomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

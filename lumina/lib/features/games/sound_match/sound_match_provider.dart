@@ -1,14 +1,16 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants.dart';
+import '../../../shared/services/google_sheets_service.dart';
 import '../../../shared/storage/game_score.dart';
 import '../../../shared/storage/storage_service.dart';
+import 'word_emoji_map.dart';
 
 /// ไฟล์นี้จัดการ "สถานะ" (state) ของเกมจับคู่เสียง
-/// ใช้ Riverpod Notifier เพื่อเก็บข้อมูลเกม เช่น คำถาม, คะแนน, รอบปัจจุบัน
-/// และมี method สำหรับเริ่มเกม, เลือกคำตอบ, ไปข้อถัดไป
+/// รองรับโหลดข้อมูลจาก Google Sheets พร้อม fallback ใช้ข้อมูล hardcoded
 
 // ─── โมเดลข้อมูลของแต่ละรอบ (1 ข้อ) ────────────────────────────────────────────
 
@@ -16,16 +18,15 @@ import '../../../shared/storage/storage_service.dart';
 class SoundMatchRound {
   const SoundMatchRound({
     required this.correctWord,
-    required this.options, // ตัวเลือก 4 คำ (1 คำถูก + 3 คำผิด) สุ่มลำดับแล้ว
+    required this.options,
   });
 
-  final String correctWord; // คำที่ถูกต้อง (คำที่ถูกอ่านออกเสียง)
-  final List<String> options; // ตัวเลือกทั้ง 4 คำ
+  final String correctWord;
+  final List<String> options;
 }
 
 // ─── โมเดลสถานะรวมของเกมทั้งหมด ────────────────────────────────────────────
 
-/// เก็บสถานะทั้งหมดของเกม: รอบทั้งหมด, ข้อปัจจุบัน, คะแนน, ตัวเลือกที่เลือก
 class SoundMatchState {
   const SoundMatchState({
     this.rounds = const [],
@@ -35,28 +36,30 @@ class SoundMatchState {
     this.showFeedback = false,
     this.isComplete = false,
     this.startTime,
+    this.activeWordPool = const [],
+    this.activeEmojiMap = const {},
+    this.isLoading = false,
   });
 
-  final List<SoundMatchRound> rounds; // รอบทั้งหมด (เช่น 10 ข้อ)
-  final int currentRound; // หมายเลขข้อปัจจุบัน (เริ่มจาก 0)
-  final int score; // คะแนนสะสม
-  final String? selectedWord; // คำที่ผู้ใช้เลือก (null = ยังไม่ได้เลือก)
-  final bool showFeedback; // กำลังแสดงผลถูก/ผิด (เขียว/แดง)
-  final bool isComplete; // เล่นครบทุกข้อแล้ว
-  final DateTime? startTime; // เวลาเริ่มเกม (ใช้คำนวณระยะเวลา)
+  final List<SoundMatchRound> rounds;
+  final int currentRound;
+  final int score;
+  final String? selectedWord;
+  final bool showFeedback;
+  final bool isComplete;
+  final DateTime? startTime;
+  final List<String> activeWordPool; // คำศัพท์ที่ใช้ (จาก Sheet หรือ hardcoded)
+  final Map<String, String> activeEmojiMap; // emoji map ที่ใช้
+  final bool isLoading; // กำลังโหลดข้อมูลจาก Sheet
 
-  /// จำนวนข้อทั้งหมด
   int get totalRounds => rounds.length;
 
-  /// ข้อมูลรอบปัจจุบัน (null ถ้ายังไม่เริ่ม)
   SoundMatchRound? get current =>
       currentRound < rounds.length ? rounds[currentRound] : null;
 
-  /// ตรวจว่าผู้ใช้เลือกคำตอบถูกหรือไม่
   bool get isCorrectSelection =>
       selectedWord != null && selectedWord == current?.correctWord;
 
-  /// สร้าง state ใหม่โดยเปลี่ยนเฉพาะค่าที่ต้องการ (Immutable pattern)
   SoundMatchState copyWith({
     List<SoundMatchRound>? rounds,
     int? currentRound,
@@ -66,6 +69,9 @@ class SoundMatchState {
     bool? isComplete,
     DateTime? startTime,
     bool clearSelected = false,
+    List<String>? activeWordPool,
+    Map<String, String>? activeEmojiMap,
+    bool? isLoading,
   }) {
     return SoundMatchState(
       rounds: rounds ?? this.rounds,
@@ -75,28 +81,53 @@ class SoundMatchState {
       showFeedback: showFeedback ?? this.showFeedback,
       isComplete: isComplete ?? this.isComplete,
       startTime: startTime ?? this.startTime,
+      activeWordPool: activeWordPool ?? this.activeWordPool,
+      activeEmojiMap: activeEmojiMap ?? this.activeEmojiMap,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }
 
-// ─── Notifier — ตัวจัดการ logic ของเกม ───────────────────────────────────────────────
+// ─── Notifier ───────────────────────────────────────────────
 
-/// Notifier ควบคุม logic หลักของเกม: สุ่มคำถาม, ตรวจคำตอบ, เปลี่ยนข้อ, บันทึกคะแนน
 class SoundMatchNotifier extends Notifier<SoundMatchState> {
-  final _random = Random(); // ตัวสุ่มลำดับ
+  final _random = Random();
 
   @override
-  SoundMatchState build() => const SoundMatchState(); // สถานะเริ่มต้นว่างเปล่า
+  SoundMatchState build() => const SoundMatchState();
 
-  /// สุ่มสร้าง 10 ข้อ โดยแต่ละข้อมีคำถูก 1 คำ + คำผิด 3 คำ
-  void startGame() {
-    // สุ่มคำจาก word pool แล้วเลือกมาตามจำนวนรอบ
-    final pool = List<String>.from(AppConstants.wordPool)..shuffle(_random);
-    final words = pool.take(AppConstants.soundMatchRounds).toList();
+  /// เริ่มเกม — โหลดข้อมูลจาก Google Sheets ก่อน ถ้าไม่ได้ใช้ hardcoded
+  Future<void> startGame() async {
+    state = state.copyWith(isLoading: true);
+
+    // พยายามโหลดจาก Google Sheets
+    List<String> pool;
+    Map<String, String> emojiMap;
+
+    try {
+      final sheetData = await GoogleSheetsService().fetchSoundMatchData();
+      if (sheetData != null && sheetData.words.length >= 4) {
+        pool = sheetData.words;
+        emojiMap = sheetData.emojiMap;
+        debugPrint('Sound Match: ใช้ข้อมูลจาก Google Sheets (${pool.length} คำ)');
+      } else {
+        // Fallback ใช้ข้อมูล hardcoded
+        pool = AppConstants.wordPool;
+        emojiMap = wordEmojiMap;
+        debugPrint('Sound Match: ใช้ข้อมูล hardcoded');
+      }
+    } catch (e) {
+      pool = AppConstants.wordPool;
+      emojiMap = wordEmojiMap;
+      debugPrint('Sound Match: fallback เนื่องจาก error: $e');
+    }
+
+    // สุ่มสร้างรอบเกม
+    final shuffled = List<String>.from(pool)..shuffle(_random);
+    final words = shuffled.take(AppConstants.soundMatchRounds).toList();
 
     final rounds = words.map((correctWord) {
-      // เลือกคำผิด 3 คำ (ไม่ซ้ำกับคำถูก) เป็นตัวเลือกหลอก
-      final others = List<String>.from(AppConstants.wordPool)
+      final others = List<String>.from(pool)
         ..remove(correctWord)
         ..shuffle(_random);
       final distractors = others.take(3).toList();
@@ -107,10 +138,11 @@ class SoundMatchNotifier extends Notifier<SoundMatchState> {
     state = SoundMatchState(
       rounds: rounds,
       startTime: DateTime.now(),
+      activeWordPool: pool,
+      activeEmojiMap: emojiMap,
     );
   }
 
-  /// เมื่อผู้ใช้แตะตัวเลือก — ตรวจว่าถูกหรือผิด แล้วเพิ่มคะแนนถ้าถูก
   void selectAnswer(String word) {
     if (state.showFeedback || state.isComplete) return;
 
@@ -122,7 +154,6 @@ class SoundMatchNotifier extends Notifier<SoundMatchState> {
     );
   }
 
-  /// เรียกหลังแสดงผลถูก/ผิดเสร็จ — ไปข้อถัดไปหรือจบเกม
   void advanceRound() {
     final next = state.currentRound + 1;
     if (next >= state.totalRounds) {
@@ -141,7 +172,6 @@ class SoundMatchNotifier extends Notifier<SoundMatchState> {
     }
   }
 
-  /// บันทึกคะแนนลง local storage เมื่อเล่นจบ
   Future<void> _saveScore() async {
     final elapsed =
         DateTime.now().difference(state.startTime ?? DateTime.now());
@@ -156,9 +186,6 @@ class SoundMatchNotifier extends Notifier<SoundMatchState> {
   }
 }
 
-// ─── Provider — ตัวแปรกลางให้ Widget อื่นเข้าถึง state ได้ ───────────────────────────────────────────────
-
-/// Provider ที่ใช้ใน Widget เพื่ออ่าน/เปลี่ยนสถานะเกมจับคู่เสียง
 final soundMatchProvider =
     NotifierProvider<SoundMatchNotifier, SoundMatchState>(
   SoundMatchNotifier.new,

@@ -1,38 +1,34 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/services/google_sheets_service.dart';
 import '../../../shared/storage/game_score.dart';
 import '../../../shared/storage/storage_service.dart';
 import 'sequence_data.dart';
 
 /// ไฟล์นี้จัดการ "สถานะ" (state) ของเกมเรียงลำดับ
-/// ใช้ Riverpod Notifier เพื่อเก็บข้อมูลเกม เช่น โจทย์, คะแนน, ลำดับที่ผู้ใช้แตะ
-/// และมี method สำหรับเริ่มเกม, แตะรายการ, ย้อนกลับ, ส่งคำตอบ, ไปข้อถัดไป
+/// รองรับโหลดข้อมูลจาก Google Sheets พร้อม fallback ใช้ข้อมูล hardcoded
 
-// ─── โมเดลข้อมูลของแต่ละรอบ (1 ข้อ) ────────────────────────────────────────────
+// ─── โมเดลข้อมูลของแต่ละรอบ ────────────────────────────────────────────
 
-/// เก็บข้อมูล 1 รอบ: หัวข้อ, ลำดับที่ถูกต้อง, และลำดับที่สลับแล้ว (แสดงบนจอ)
 class SequenceRound {
   const SequenceRound({
     required this.datasetTitle,
-    required this.correctOrder, // รายการเรียงลำดับถูกต้อง
-    required this.scrambled, // รายการสลับลำดับแล้ว (แสดงบนจอ)
+    required this.correctOrder,
+    required this.scrambled,
   });
 
-  final String datasetTitle; // ชื่อหัวข้อ เช่น "กิจวัตรประจำวัน"
-  final List<SequenceItem> correctOrder; // ลำดับที่ถูกต้อง (เฉลย)
-  final List<SequenceItem> scrambled; // ลำดับที่สุ่มสลับแล้ว
+  final String datasetTitle;
+  final List<SequenceItem> correctOrder;
+  final List<SequenceItem> scrambled;
 }
 
-// ─── ผลลัพธ์ของแต่ละรอบ ─────────────────────────────
-
-/// สถานะผลลัพธ์: none = ยังไม่ส่งคำตอบ, correct = ถูก, wrong = ผิด
 enum RoundResult { none, correct, wrong }
 
 // ─── โมเดลสถานะรวมของเกมทั้งหมด ────────────────────────────────────────────
 
-/// เก็บสถานะทั้งหมดของเกมเรียงลำดับ: รอบทั้งหมด, ข้อปัจจุบัน, ลำดับที่แตะ, คะแนน
 class SequenceGameState {
   const SequenceGameState({
     this.rounds = const [],
@@ -42,33 +38,29 @@ class SequenceGameState {
     this.roundResult = RoundResult.none,
     this.isComplete = false,
     this.startTime,
+    this.isLoading = false,
   });
 
-  final List<SequenceRound> rounds; // รอบทั้งหมด
-  final int currentRound; // หมายเลขข้อปัจจุบัน (เริ่มจาก 0)
-  final int score; // คะแนนสะสม
-  final List<SequenceItem> tappedOrder; // ลำดับที่ผู้ใช้แตะ
-  final RoundResult roundResult; // ผลลัพธ์ของรอบนี้
-  final bool isComplete; // เล่นครบทุกข้อแล้ว
-  final DateTime? startTime; // เวลาเริ่มเกม
+  final List<SequenceRound> rounds;
+  final int currentRound;
+  final int score;
+  final List<SequenceItem> tappedOrder;
+  final RoundResult roundResult;
+  final bool isComplete;
+  final DateTime? startTime;
+  final bool isLoading;
 
-  /// จำนวนข้อทั้งหมด
   int get totalRounds => rounds.length;
 
-  /// ข้อมูลรอบปัจจุบัน (null ถ้ายังไม่เริ่ม)
   SequenceRound? get current =>
       currentRound < rounds.length ? rounds[currentRound] : null;
 
-  /// จำนวนรายการที่ต้องแตะในรอบนี้
   int get itemsInRound => current?.scrambled.length ?? 0;
 
-  /// แตะครบทุกรายการแล้วหรือยัง (พร้อมส่งคำตอบ)
   bool get allTapped => tappedOrder.length >= itemsInRound;
 
-  /// หาลำดับที่ผู้ใช้แตะรายการนี้ (คืน -1 ถ้ายังไม่แตะ)
   int tapIndexOf(SequenceItem item) => tappedOrder.indexOf(item);
 
-  /// สร้าง state ใหม่โดยเปลี่ยนเฉพาะค่าที่ต้องการ (Immutable pattern)
   SequenceGameState copyWith({
     List<SequenceRound>? rounds,
     int? currentRound,
@@ -77,6 +69,7 @@ class SequenceGameState {
     RoundResult? roundResult,
     bool? isComplete,
     DateTime? startTime,
+    bool? isLoading,
   }) {
     return SequenceGameState(
       rounds: rounds ?? this.rounds,
@@ -86,34 +79,61 @@ class SequenceGameState {
       roundResult: roundResult ?? this.roundResult,
       isComplete: isComplete ?? this.isComplete,
       startTime: startTime ?? this.startTime,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }
 
-// ─── Notifier — ตัวจัดการ logic ของเกม ───────────────────────────────────────────────
+// ─── Notifier ───────────────────────────────────────────────
 
-/// Notifier ควบคุม logic หลักของเกมเรียงลำดับ:
-/// สร้างโจทย์, รับการแตะ, ตรวจคำตอบ, บันทึกคะแนน
 class SequenceGameNotifier extends Notifier<SequenceGameState> {
-  final _random = Random(); // ตัวสุ่มลำดับ
+  final _random = Random();
 
   @override
-  SequenceGameState build() => const SequenceGameState(); // สถานะเริ่มต้นว่างเปล่า
+  SequenceGameState build() => const SequenceGameState();
 
-  /// สร้างโจทย์จาก dataset ทั้งหมด โดยสุ่มสลับลำดับรายการในแต่ละข้อ
-  void startGame() {
+  /// เริ่มเกม — โหลดข้อมูลจาก Google Sheets ก่อน ถ้าไม่ได้ใช้ hardcoded
+  Future<void> startGame() async {
+    state = state.copyWith(isLoading: true);
+
+    // พยายามโหลดจาก Google Sheets
+    List<SequenceDataset> datasets;
+
+    try {
+      final sheetData = await GoogleSheetsService().fetchSequenceData();
+      if (sheetData != null && sheetData.datasets.isNotEmpty) {
+        // แปลงจาก Sheet format เป็น SequenceDataset
+        datasets = sheetData.datasets
+            .map((d) => SequenceDataset(
+                  title: d.title,
+                  items: d.items
+                      .map((item) =>
+                          SequenceItem(label: item.label, emoji: item.emoji))
+                      .toList(),
+                ))
+            .toList();
+        debugPrint(
+            'Sequence: ใช้ข้อมูลจาก Google Sheets (${datasets.length} ชุด)');
+      } else {
+        datasets = sequenceDatasets;
+        debugPrint('Sequence: ใช้ข้อมูล hardcoded');
+      }
+    } catch (e) {
+      datasets = sequenceDatasets;
+      debugPrint('Sequence: fallback เนื่องจาก error: $e');
+    }
+
+    // สร้างรอบเกม
     final rounds = <SequenceRound>[];
 
-    for (final dataset in sequenceDatasets) {
-      // เลือก 4 รายการแรก (หรือทั้งหมดถ้ามีน้อยกว่า 4)
-      final count = dataset.items.length < 4 ? dataset.items.length : 4;
-      final correctOrder = dataset.items.sublist(0, count);
+    for (final dataset in datasets) {
+      // ใช้ items ทั้งหมดจาก dataset (รองรับจำนวนเท่าไหร่ก็ได้)
+      final correctOrder = List<SequenceItem>.from(dataset.items);
       final scrambled = List<SequenceItem>.from(correctOrder);
 
-      // สุ่มจนกว่าลำดับจะต่างจากเฉลยจริง ๆ (ไม่งั้นจะง่ายเกินไป)
       do {
         scrambled.shuffle(_random);
-      } while (_listsEqual(scrambled, correctOrder) && count > 1);
+      } while (_listsEqual(scrambled, correctOrder) && correctOrder.length > 1);
 
       rounds.add(SequenceRound(
         datasetTitle: dataset.title,
@@ -128,17 +148,15 @@ class SequenceGameNotifier extends Notifier<SequenceGameState> {
     );
   }
 
-  /// เมื่อผู้ใช้แตะรายการ — เพิ่มเข้าลำดับที่เลือก
   void tapItem(SequenceItem item) {
-    if (state.roundResult != RoundResult.none) return; // ตอบแล้ว ไม่รับเพิ่ม
-    if (state.tappedOrder.contains(item)) return; // แตะแล้ว ไม่รับซ้ำ
+    if (state.roundResult != RoundResult.none) return;
+    if (state.tappedOrder.contains(item)) return;
 
     state = state.copyWith(
       tappedOrder: [...state.tappedOrder, item],
     );
   }
 
-  /// ยกเลิกการแตะล่าสุด (ลบรายการสุดท้ายออกจากลำดับที่เลือก)
   void undoLastTap() {
     if (state.tappedOrder.isEmpty) return;
     if (state.roundResult != RoundResult.none) return;
@@ -148,7 +166,6 @@ class SequenceGameNotifier extends Notifier<SequenceGameState> {
     );
   }
 
-  /// ส่งคำตอบ — เปรียบเทียบลำดับที่ผู้ใช้แตะกับเฉลย
   void submitAnswer() {
     final round = state.current;
     if (round == null || !state.allTapped) return;
@@ -161,7 +178,6 @@ class SequenceGameNotifier extends Notifier<SequenceGameState> {
     );
   }
 
-  /// ไปข้อถัดไป หรือจบเกมถ้าเป็นข้อสุดท้าย
   void nextRound() {
     final next = state.currentRound + 1;
     if (next >= state.totalRounds) {
@@ -176,7 +192,6 @@ class SequenceGameNotifier extends Notifier<SequenceGameState> {
     }
   }
 
-  /// บันทึกคะแนนลง local storage เมื่อเล่นจบ
   Future<void> _saveScore() async {
     final elapsed =
         DateTime.now().difference(state.startTime ?? DateTime.now());
@@ -190,7 +205,6 @@ class SequenceGameNotifier extends Notifier<SequenceGameState> {
     await StorageService().saveGameScore(score);
   }
 
-  /// เปรียบเทียบ 2 ลิสต์ว่าเหมือนกันหรือไม่ (ตรวจทีละตำแหน่ง)
   bool _listsEqual(List<SequenceItem> a, List<SequenceItem> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
@@ -200,9 +214,6 @@ class SequenceGameNotifier extends Notifier<SequenceGameState> {
   }
 }
 
-// ─── Provider — ตัวแปรกลางให้ Widget อื่นเข้าถึง state ได้ ───────────────────────────────────────────────
-
-/// Provider ที่ใช้ใน Widget เพื่ออ่าน/เปลี่ยนสถานะเกมเรียงลำดับ
 final sequenceGameProvider =
     NotifierProvider<SequenceGameNotifier, SequenceGameState>(
   SequenceGameNotifier.new,

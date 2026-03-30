@@ -114,7 +114,7 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
             ),
             const SizedBox(height: 16),
 
-            // ─── ตาราง 2x2 แสดงการ์ดตัวเลือกที่สุ่มลำดับ ────────────────────────────
+            // ─── ตาราง 2 คอลัมน์ แสดงการ์ดตัวเลือกที่สุ่มลำดับ ────────────────────────────
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -123,7 +123,6 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   childAspectRatio: 1.2,
-                  physics: const NeverScrollableScrollPhysics(),
                   children: round.scrambled.map((item) {
                     final tapIndex = state.tapIndexOf(item); // ลำดับที่ผู้ใช้แตะ
                     final isTapped = tapIndex >= 0; // ถูกแตะแล้วหรือยัง

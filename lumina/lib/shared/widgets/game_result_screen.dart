@@ -33,13 +33,13 @@ class GameResultScreen extends StatelessWidget {
   final String goodMessage, okMessage, fairMessage, lowMessage;
   final String goodSub, okSub, fairSub, lowSub;
 
-  /// คำนวณจำนวนดาว: >=80% = 3 ดาว, >=50% = 2 ดาว, >=30% = 1 ดาว
+  /// คำนวณจำนวนดาว: >=80% = 3 ดาว, >=50% = 2 ดาว, >=25% = 1 ดาว
   int get _stars {
     if (total == 0) return 0;
     final ratio = score / total;
     if (ratio >= 0.8) return 3;
     if (ratio >= 0.5) return 2;
-    if (ratio >= 0.3) return 1;
+    if (ratio >= 0.25) return 1;
     return 0;
   }
 

@@ -10,7 +10,7 @@ import '../../../core/theme.dart';
 import '../../../shared/widgets/exit_dialog.dart';
 import 'sound_match_provider.dart';
 import 'sound_match_result.dart';
-import 'word_emoji_map.dart';
+import 'word_emoji_map.dart' as fallback;
 
 /// ไฟล์นี้เป็น UI หลักของเกม "จับคู่เสียง"
 /// ผู้ใช้จะได้ยินเสียงอ่านคำภาษาไทย (ผ่าน Text-to-Speech)
@@ -328,10 +328,14 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
                   crossAxisSpacing: 14,
                   childAspectRatio: 0.95,
                   children: round.options.map((word) {
-                    return _OptionCard(
+                    // ใช้ emoji map จาก state (อาจมาจาก Google Sheets หรือ hardcoded)
+                  final emojiMap = state.activeEmojiMap.isNotEmpty
+                      ? state.activeEmojiMap
+                      : fallback.wordEmojiMap;
+                  return _OptionCard(
                       key: ValueKey('${state.currentRound}_$word'),
                       word: word,
-                      emoji: wordEmojiMap[word] ?? '❓',
+                      emoji: emojiMap[word] ?? '❓',
                       isCorrect: word == round.correctWord,
                       isSelected: state.selectedWord == word,
                       showFeedback: state.showFeedback,

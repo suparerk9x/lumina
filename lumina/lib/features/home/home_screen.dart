@@ -5,18 +5,17 @@ import '../../core/theme.dart';
 import '../../shared/utils/thai_date.dart';
 import '../assessment/assessment_screen.dart';
 import '../assessment/assessment_state.dart';
-import '../games/sequence/sequence_game.dart';
+import '../games/color_sequence/color_sequence_game.dart';
+import '../games/memory_match/memory_match_game.dart';
 import '../games/sound_match/sound_match_game.dart';
 import '../ai_tips/tips_widget.dart';
 import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../screen_time/screen_time_screen.dart';
 
-/// ไฟล์นี้เป็นหน้าหลักของแอป Lumina
+/// หน้าหลักของแอป Lumina
 /// มี Bottom Navigation Bar 4 แท็บ: ฝึกสมอง, ประเมิน, จำกัดเวลา, ตั้งค่า
 
-/// HomeScreen เป็น Widget หลักที่แสดงหน้าจอแรกของแอป
-/// ใช้ StatefulWidget เพราะต้องเก็บค่าแท็บที่เลือกอยู่ (_currentIndex)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -24,12 +23,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-/// State ของ HomeScreen เก็บค่าว่าตอนนี้อยู่แท็บไหน
 class _HomeScreenState extends State<HomeScreen> {
-  // ตัวแปรเก็บลำดับแท็บที่กำลังเลือก (0=ฝึกสมอง, 1=ประเมิน, 2=จำกัดเวลา, 3=ตั้งค่า)
   int _currentIndex = 0;
 
-  // รายการหน้าจอทั้ง 4 แท็บ
   final List<Widget> _tabs = const [
     _GamesTab(),
     _AssessmentTab(),
@@ -37,19 +33,18 @@ class _HomeScreenState extends State<HomeScreen> {
     SettingsScreen(),
   ];
 
-  /// สร้างหน้าจอหลัก มี IndexedStack เพื่อเก็บสถานะแต่ละแท็บไว้
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      // IndexedStack แสดงแท็บตาม index ที่เลือก แต่เก็บทุกแท็บไว้ในหน่วยความจำ
       body: IndexedStack(
         index: _currentIndex,
         children: _tabs,
       ),
-      // แถบนำทางด้านล่าง (Bottom Navigation Bar)
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppTheme.darkSurface : Colors.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha(15),
@@ -61,8 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          selectedItemColor: AppTheme.primary,
-          unselectedItemColor: AppTheme.textSecondary,
+          selectedItemColor:
+              isDark ? AppTheme.darkPrimary : AppTheme.primary,
+          unselectedItemColor:
+              isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
           iconSize: 32,
           selectedFontSize: 16,
           unselectedFontSize: 16,
@@ -96,15 +93,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ─── Greeting Card ──────────────────────────────────────────
 
-/// การ์ดทักทายผู้ใช้ แสดงข้อความ "สวัสดี!" พร้อมวันที่ภาษาไทย (พ.ศ.)
 class _GreetingCard extends StatelessWidget {
   const _GreetingCard();
 
-  /// แปลงวันที่วันนี้เป็นรูปแบบไทย เช่น "วันที่ 26/03/2569"
   String _todayThaiDate() => 'วันที่ ${formatThaiDate(DateTime.now())}';
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -117,12 +114,13 @@ class _GreetingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withAlpha(25),
+                    color: (isDark ? AppTheme.darkPrimary : AppTheme.primary)
+                        .withAlpha(25),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.wb_sunny_rounded,
-                    color: AppTheme.primary,
+                    color: isDark ? AppTheme.darkPrimary : AppTheme.primary,
                     size: 32,
                   ),
                 ),
@@ -139,7 +137,9 @@ class _GreetingCard extends StatelessWidget {
                       Text(
                         'วันนี้เป็นอย่างไรบ้าง?',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.textSecondary,
+                              color: isDark
+                                  ? AppTheme.darkTextSecondary
+                                  : AppTheme.textSecondary,
                             ),
                       ),
                     ],
@@ -151,13 +151,15 @@ class _GreetingCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.background,
+                color: isDark ? AppTheme.darkBackground : AppTheme.background,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 _todayThaiDate(),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: isDark
+                          ? AppTheme.darkTextSecondary
+                          : AppTheme.textSecondary,
                     ),
               ),
             ),
@@ -170,8 +172,6 @@ class _GreetingCard extends StatelessWidget {
 
 // ─── Tab: ฝึกสมอง (Games) ───────────────────────────────────
 
-/// แท็บ "ฝึกสมอง" แสดงรายการเกมฝึกสมองทั้งหมด
-/// มีการ์ดทักทาย, คำแนะนำ AI, และเกมต่าง ๆ ให้เลือกเล่น
 class _GamesTab extends StatelessWidget {
   const _GamesTab();
 
@@ -179,6 +179,18 @@ class _GamesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/images/logo.jpg',
+              width: 36,
+              height: 36,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
         title: const Text('ฝึกสมอง'),
         actions: [
           IconButton(
@@ -203,8 +215,8 @@ class _GamesTab extends StatelessWidget {
             icon: Icons.music_note_rounded,
             title: 'จับคู่เสียง',
             subtitle: 'ฝึกความจำด้านการฟัง',
-            color: const Color(0xFFE8F5E9),
-            iconColor: AppTheme.success,
+            color: const Color(0xFFE0F2F1),
+            iconColor: AppTheme.primary,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -214,15 +226,29 @@ class _GamesTab extends StatelessWidget {
             },
           ),
           _GameCard(
-            icon: Icons.format_list_numbered_rounded,
-            title: 'เรียงลำดับ',
-            subtitle: 'ฝึกการคิดเชิงตรรกะ',
+            icon: Icons.grid_view_rounded,
+            title: 'จับคู่ภาพ',
+            subtitle: 'ฝึกความจำด้านภาพ',
+            color: const Color(0xFFE8F5E9),
+            iconColor: AppTheme.success,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MemoryMatchGame(),
+                ),
+              );
+            },
+          ),
+          _GameCard(
+            icon: Icons.gamepad_rounded,
+            title: 'กดปุ่มตามลำดับ',
+            subtitle: 'ฝึกความจำและการสังเกต',
             color: const Color(0xFFFFF3E0),
             iconColor: AppTheme.warning,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => const SequenceGame(),
+                  builder: (_) => const ColorSequenceGame(),
                 ),
               );
             },
@@ -233,8 +259,7 @@ class _GamesTab extends StatelessWidget {
   }
 }
 
-/// การ์ดแสดงข้อมูลเกม มีไอคอน ชื่อเกม คำอธิบาย และลูกศรไปเล่นเกม
-/// ใช้ซ้ำได้กับทุกเกม โดยส่ง parameter ต่างกัน
+/// การ์ดแสดงข้อมูลเกม
 class _GameCard extends StatelessWidget {
   const _GameCard({
     required this.icon,
@@ -245,12 +270,12 @@ class _GameCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon; // ไอคอนของเกม
-  final String title; // ชื่อเกม
-  final String subtitle; // คำอธิบายสั้น ๆ
-  final Color color; // สีพื้นหลังไอคอน
-  final Color iconColor; // สีของไอคอน
-  final VoidCallback onTap; // ฟังก์ชันที่เรียกเมื่อกดการ์ด
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Color iconColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -284,16 +309,20 @@ class _GameCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondary,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppTheme.darkTextSecondary
+                                : AppTheme.textSecondary,
                             fontSize: 16,
                           ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppTheme.darkTextSecondary
+                    : AppTheme.textSecondary,
                 size: 28,
               ),
             ],
@@ -306,13 +335,13 @@ class _GameCard extends StatelessWidget {
 
 // ─── Tab: ประเมิน (Assessment) ──────────────────────────────
 
-/// แท็บ "ประเมิน" แสดงหน้าจอให้ผู้ใช้เริ่มทำแบบประเมินสุขภาพสมอง
-/// ใช้ ConsumerWidget เพราะต้องเข้าถึง Riverpod provider สำหรับเริ่มการประเมิน
 class _AssessmentTab extends ConsumerWidget {
   const _AssessmentTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text('ประเมินสุขภาพสมอง')),
       body: Center(
@@ -324,7 +353,8 @@ class _AssessmentTab extends ConsumerWidget {
               Icon(
                 Icons.assignment_outlined,
                 size: 80,
-                color: AppTheme.primary.withAlpha(120),
+                color: (isDark ? AppTheme.darkPrimary : AppTheme.primary)
+                    .withAlpha(120),
               ),
               const SizedBox(height: 24),
               Text(
@@ -336,7 +366,9 @@ class _AssessmentTab extends ConsumerWidget {
               Text(
                 'ทำแบบประเมินเพื่อดูสุขภาพสมองของคุณ',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: isDark
+                          ? AppTheme.darkTextSecondary
+                          : AppTheme.textSecondary,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -361,6 +393,4 @@ class _AssessmentTab extends ConsumerWidget {
 }
 
 // ─── Tab: จำกัดเวลา (Screen Time) ───────────────────────────
-// ใช้ ScreenTimeScreen โดยตรงเป็นเนื้อหาของแท็บจำกัดเวลา
-// typedef คือการตั้งชื่อใหม่ให้กับ class เพื่อให้อ่านเข้าใจง่ายขึ้น
 typedef _ScreenTimeTab = ScreenTimeScreen;

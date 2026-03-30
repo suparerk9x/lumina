@@ -7,9 +7,6 @@ import '../../shared/storage/storage_service.dart';
 import '../screen_time/screen_time_provider.dart';
 import 'settings_provider.dart';
 
-/// ไฟล์นี้เป็นหน้าตั้งค่าของแอป
-/// ให้ผู้ใช้เลือกแบบตัวอักษร, ขนาดตัวอักษร, ดูข้อมูลแอป, และลบข้อมูลทั้งหมด
-
 /// หน้าจอตั้งค่า แสดงตัวเลือกต่าง ๆ สำหรับปรับแต่งแอป
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -17,16 +14,38 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('ตั้งค่า')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // ─── ส่วนเลือกโหมดธีม (สว่าง/มืด/ตามระบบ) ──────────
+          _ThemeModeSection(
+            current: settings.themeMode,
+            isDark: isDark,
+            onSelect: (mode) {
+              ref.read(settingsProvider.notifier).setThemeMode(mode);
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // ─── ส่วนเลือกสีพื้นหลัง ────────────────────────────
+          _BackgroundColorSection(
+            currentIndex: settings.backgroundPresetIndex,
+            isDark: isDark,
+            onSelect: (index) {
+              ref.read(settingsProvider.notifier).setBackgroundPreset(index);
+            },
+          ),
+          const SizedBox(height: 20),
+
           // ─── ส่วนเลือกแบบตัวอักษร ────────────────────────────
           _FontFamilySection(
             current: settings.appFont,
             fontScale: settings.fontScale.value,
+            isDark: isDark,
             onSelect: (font) {
               ref.read(settingsProvider.notifier).setAppFont(font);
             },
@@ -37,6 +56,7 @@ class SettingsScreen extends ConsumerWidget {
           _FontScaleSection(
             current: settings.fontScale,
             fontFamily: settings.appFont.family,
+            isDark: isDark,
             onSelect: (scale) {
               ref.read(settingsProvider.notifier).setFontScale(scale);
             },
@@ -60,14 +80,18 @@ class SettingsScreen extends ConsumerWidget {
                   Text(
                     'แอปฝึกสมองสำหรับผู้สูงอายุ',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.textSecondary,
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : AppTheme.textSecondary,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'เวอร์ชัน ${AppConstants.appVersion}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : AppTheme.textSecondary,
                           fontSize: 16,
                         ),
                   ),
@@ -175,23 +199,30 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ส่วนเลือกแบบตัวอักษร (Font Family)
+// ส่วนเลือกโหมดธีม (Theme Mode)
 // ═══════════════════════════════════════════════════════════════
 
-/// แสดงรายการฟอนต์ไทยให้ผู้ใช้เลือก พร้อมตัวอย่างตัวอักษร
-class _FontFamilySection extends StatelessWidget {
-  const _FontFamilySection({
+class _ThemeModeSection extends StatelessWidget {
+  const _ThemeModeSection({
     required this.current,
-    required this.fontScale,
+    required this.isDark,
     required this.onSelect,
   });
 
-  final AppFont current;
-  final double fontScale;
-  final ValueChanged<AppFont> onSelect;
+  final AppThemeMode current;
+  final bool isDark;
+  final ValueChanged<AppThemeMode> onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor =
+        isDark ? AppTheme.darkPrimary : AppTheme.primary;
+    final textColor =
+        isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final secondaryTextColor =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+    final cardBg = isDark ? AppTheme.darkSurface : Colors.white;
+
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -204,11 +235,247 @@ class _FontFamilySection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withAlpha(25),
+                    color: primaryColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.font_download_rounded,
-                      color: AppTheme.primary, size: 24),
+                  child: Icon(Icons.palette_rounded,
+                      color: primaryColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'โหมดธีม',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: AppThemeMode.values.map((mode) {
+                final isSelected = current == mode;
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: mode != AppThemeMode.values.last ? 10 : 0,
+                    ),
+                    child: Material(
+                      color: isSelected
+                          ? primaryColor.withAlpha(15)
+                          : cardBg,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () => onSelect(mode),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? primaryColor
+                                  : (isDark
+                                      ? Colors.grey.shade700
+                                      : Colors.grey.shade300),
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                mode.icon,
+                                size: 28,
+                                color: isSelected
+                                    ? primaryColor
+                                    : secondaryTextColor,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                mode.label,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: isSelected
+                                      ? primaryColor
+                                      : textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ส่วนเลือกสีพื้นหลัง (Background Color)
+// ═══════════════════════════════════════════════════════════════
+
+class _BackgroundColorSection extends StatelessWidget {
+  const _BackgroundColorSection({
+    required this.currentIndex,
+    required this.isDark,
+    required this.onSelect,
+  });
+
+  final int currentIndex;
+  final bool isDark;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor =
+        isDark ? AppTheme.darkPrimary : AppTheme.primary;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.format_paint_rounded,
+                      color: primaryColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'สีพื้นหลัง',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: List.generate(backgroundPresets.length, (index) {
+                final preset = backgroundPresets[index];
+                final isSelected = currentIndex == index;
+                final displayColor =
+                    isDark ? preset.darkColor : preset.lightColor;
+
+                return GestureDetector(
+                  onTap: () => onSelect(index),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: displayColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? primaryColor
+                                : (isDark
+                                    ? Colors.grey.shade600
+                                    : Colors.grey.shade400),
+                            width: isSelected ? 3 : 1.5,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: primaryColor.withAlpha(60),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  )
+                                ]
+                              : null,
+                        ),
+                        child: isSelected
+                            ? Icon(Icons.check_rounded,
+                                color: primaryColor, size: 24)
+                            : null,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        preset.name,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: isSelected
+                              ? primaryColor
+                              : Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ส่วนเลือกแบบตัวอักษร (Font Family)
+// ═══════════════════════════════════════════════════════════════
+
+class _FontFamilySection extends StatelessWidget {
+  const _FontFamilySection({
+    required this.current,
+    required this.fontScale,
+    required this.isDark,
+    required this.onSelect,
+  });
+
+  final AppFont current;
+  final double fontScale;
+  final bool isDark;
+  final ValueChanged<AppFont> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor =
+        isDark ? AppTheme.darkPrimary : AppTheme.primary;
+    final textColor =
+        isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final secondaryTextColor =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+    final cardBg = isDark ? AppTheme.darkSurface : Colors.white;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.font_download_rounded,
+                      color: primaryColor, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -218,16 +485,14 @@ class _FontFamilySection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Font options
             ...AppFont.values.map((font) {
               final isSelected = current == font;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Material(
                   color: isSelected
-                      ? AppTheme.primary.withAlpha(15)
-                      : Colors.white,
+                      ? primaryColor.withAlpha(15)
+                      : cardBg,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     onTap: () => onSelect(font),
@@ -241,14 +506,15 @@ class _FontFamilySection extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
-                              ? AppTheme.primary
-                              : Colors.grey.shade300,
+                              ? primaryColor
+                              : (isDark
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade300),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
                       child: Row(
                         children: [
-                          // Radio
                           Container(
                             width: 24,
                             height: 24,
@@ -256,12 +522,14 @@ class _FontFamilySection extends StatelessWidget {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected
-                                    ? AppTheme.primary
-                                    : Colors.grey.shade400,
+                                    ? primaryColor
+                                    : (isDark
+                                        ? Colors.grey.shade500
+                                        : Colors.grey.shade400),
                                 width: 2,
                               ),
                               color: isSelected
-                                  ? AppTheme.primary
+                                  ? primaryColor
                                   : Colors.transparent,
                             ),
                             child: isSelected
@@ -281,8 +549,8 @@ class _FontFamilySection extends StatelessWidget {
                                     fontSize: 20,
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
-                                        ? AppTheme.primary
-                                        : AppTheme.textPrimary,
+                                        ? primaryColor
+                                        : textColor,
                                   ),
                                 ),
                                 Text(
@@ -290,13 +558,12 @@ class _FontFamilySection extends StatelessWidget {
                                   style: TextStyle(
                                     fontFamily: font.family,
                                     fontSize: 15,
-                                    color: AppTheme.textSecondary,
+                                    color: secondaryTextColor,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          // Preview
                           Text(
                             'กขค',
                             style: TextStyle(
@@ -304,8 +571,8 @@ class _FontFamilySection extends StatelessWidget {
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: isSelected
-                                  ? AppTheme.primary
-                                  : AppTheme.textSecondary,
+                                  ? primaryColor
+                                  : secondaryTextColor,
                             ),
                           ),
                         ],
@@ -326,20 +593,30 @@ class _FontFamilySection extends StatelessWidget {
 // ส่วนเลือกขนาดตัวอักษร (Font Scale)
 // ═══════════════════════════════════════════════════════════════
 
-/// แสดงตัวเลือกขนาดตัวอักษร (เล็ก, ปกติ, ใหญ่, ใหญ่มาก) พร้อมตัวอย่าง
 class _FontScaleSection extends StatelessWidget {
   const _FontScaleSection({
     required this.current,
     required this.fontFamily,
+    required this.isDark,
     required this.onSelect,
   });
 
   final FontScale current;
   final String fontFamily;
+  final bool isDark;
   final ValueChanged<FontScale> onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor =
+        isDark ? AppTheme.darkPrimary : AppTheme.primary;
+    final textColor =
+        isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final secondaryTextColor =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+    final bgColor = isDark ? AppTheme.darkBackground : AppTheme.background;
+    final cardBg = isDark ? AppTheme.darkSurface : Colors.white;
+
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -352,11 +629,11 @@ class _FontScaleSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withAlpha(25),
+                    color: primaryColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.text_fields_rounded,
-                      color: AppTheme.primary, size: 24),
+                  child: Icon(Icons.text_fields_rounded,
+                      color: primaryColor, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -366,13 +643,11 @@ class _FontScaleSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Preview
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.background,
+                color: bgColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -383,7 +658,7 @@ class _FontScaleSection extends StatelessWidget {
                       fontFamily: fontFamily,
                       fontSize: 20 * current.value,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -392,23 +667,21 @@ class _FontScaleSection extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: fontFamily,
                       fontSize: 18 * current.value,
-                      color: AppTheme.textSecondary,
+                      color: secondaryTextColor,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-
-            // Scale options
             ...FontScale.values.map((scale) {
               final isSelected = current == scale;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Material(
                   color: isSelected
-                      ? AppTheme.primary.withAlpha(15)
-                      : Colors.white,
+                      ? primaryColor.withAlpha(15)
+                      : cardBg,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     onTap: () => onSelect(scale),
@@ -422,8 +695,10 @@ class _FontScaleSection extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
-                              ? AppTheme.primary
-                              : Colors.grey.shade300,
+                              ? primaryColor
+                              : (isDark
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade300),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -436,12 +711,14 @@ class _FontScaleSection extends StatelessWidget {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected
-                                    ? AppTheme.primary
-                                    : Colors.grey.shade400,
+                                    ? primaryColor
+                                    : (isDark
+                                        ? Colors.grey.shade500
+                                        : Colors.grey.shade400),
                                 width: 2,
                               ),
                               color: isSelected
-                                  ? AppTheme.primary
+                                  ? primaryColor
                                   : Colors.transparent,
                             ),
                             child: isSelected
@@ -459,8 +736,8 @@ class _FontScaleSection extends StatelessWidget {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: isSelected
-                                  ? AppTheme.primary
-                                  : AppTheme.textPrimary,
+                                  ? primaryColor
+                                  : textColor,
                             ),
                           ),
                           const Spacer(),
@@ -471,8 +748,8 @@ class _FontScaleSection extends StatelessWidget {
                               fontSize: 24 * scale.value,
                               fontWeight: FontWeight.bold,
                               color: isSelected
-                                  ? AppTheme.primary
-                                  : AppTheme.textSecondary,
+                                  ? primaryColor
+                                  : secondaryTextColor,
                             ),
                           ),
                         ],

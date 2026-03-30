@@ -1,13 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../core/theme.dart';
 import '../../shared/storage/hive_boxes.dart';
 
 /// ไฟล์นี้จัดการ state ของหน้าตั้งค่า
-/// เก็บข้อมูลฟอนต์ที่เลือก และขนาดตัวอักษร ใช้ Hive บันทึกค่าลงเครื่อง
+/// เก็บข้อมูลฟอนต์, ขนาดตัวอักษร, โหมดธีม, และสีพื้นหลัง
+/// ใช้ Hive บันทึกค่าลงเครื่อง
 
 /// ระดับขนาดตัวอักษร สำหรับผู้ใช้ที่ต้องการตัวอักษรใหญ่ขึ้น
-/// แต่ละระดับมีค่าตัวคูณ (value) และชื่อภาษาไทย (label)
 enum FontScale {
   small(0.9, 'เล็ก'),
   normal(1.0, 'ปกติ'),
@@ -20,7 +22,7 @@ enum FontScale {
   final String label;
 }
 
-/// ฟอนต์ไทยที่ใช้ได้ในแอป แต่ละตัวมีชื่อ family, ชื่อแสดง, และคำอธิบาย
+/// ฟอนต์ไทยที่ใช้ได้ในแอป
 enum AppFont {
   sarabun('Sarabun', 'Sarabun', 'อ่านง่าย เรียบ'),
   kanit('Kanit', 'Kanit', 'ทันสมัย โค้งมน'),
@@ -35,57 +37,104 @@ enum AppFont {
   final String description;
 }
 
-/// โมเดลเก็บสถานะการตั้งค่า: ขนาดตัวอักษร และแบบตัวอักษร
+/// โหมดธีม: สว่าง, มืด, หรือตามระบบ
+enum AppThemeMode {
+  light('สว่าง', Icons.light_mode_rounded),
+  dark('มืด', Icons.dark_mode_rounded),
+  system('ตามระบบ', Icons.settings_brightness_rounded);
+
+  const AppThemeMode(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+}
+
+/// โมเดลเก็บสถานะการตั้งค่าทั้งหมด
 class SettingsState {
   const SettingsState({
     this.fontScale = FontScale.normal,
     this.appFont = AppFont.sarabun,
+    this.themeMode = AppThemeMode.light,
+    this.backgroundPresetIndex = 0,
   });
 
-  final FontScale fontScale; // ขนาดตัวอักษรที่เลือก
-  final AppFont appFont; // แบบตัวอักษรที่เลือก
+  final FontScale fontScale;
+  final AppFont appFont;
+  final AppThemeMode themeMode;
+  final int backgroundPresetIndex; // index ใน backgroundPresets
 
-  /// สร้างสำเนาของ state พร้อมเปลี่ยนค่าบางตัว
-  SettingsState copyWith({FontScale? fontScale, AppFont? appFont}) {
+  /// สีพื้นหลังที่เลือกสำหรับโหมดสว่าง
+  Color get lightBgColor => backgroundPresets[backgroundPresetIndex].lightColor;
+
+  /// สีพื้นหลังที่เลือกสำหรับโหมดมืด
+  Color get darkBgColor => backgroundPresets[backgroundPresetIndex].darkColor;
+
+  SettingsState copyWith({
+    FontScale? fontScale,
+    AppFont? appFont,
+    AppThemeMode? themeMode,
+    int? backgroundPresetIndex,
+  }) {
     return SettingsState(
       fontScale: fontScale ?? this.fontScale,
       appFont: appFont ?? this.appFont,
+      themeMode: themeMode ?? this.themeMode,
+      backgroundPresetIndex:
+          backgroundPresetIndex ?? this.backgroundPresetIndex,
     );
   }
 }
 
-/// ตัวจัดการ logic ของหน้าตั้งค่า: โหลดและบันทึกค่าฟอนต์ลง Hive
+/// ตัวจัดการ logic ของหน้าตั้งค่า
 class SettingsNotifier extends Notifier<SettingsState> {
-  /// โหลดค่าที่บันทึกไว้จาก Hive เป็น state เริ่มต้น
   @override
   SettingsState build() {
     final box = Hive.box(HiveBoxes.screenTimeSettings);
     final savedScaleIndex = box.get('fontScaleIndex', defaultValue: 1) as int;
     final savedFontIndex = box.get('fontFamilyIndex', defaultValue: 0) as int;
+    final savedThemeIndex = box.get('themeModeIndex', defaultValue: 0) as int;
+    final savedBgIndex =
+        box.get('backgroundPresetIndex', defaultValue: 0) as int;
 
     return SettingsState(
       fontScale: FontScale
           .values[savedScaleIndex.clamp(0, FontScale.values.length - 1)],
       appFont:
           AppFont.values[savedFontIndex.clamp(0, AppFont.values.length - 1)],
+      themeMode: AppThemeMode
+          .values[savedThemeIndex.clamp(0, AppThemeMode.values.length - 1)],
+      backgroundPresetIndex:
+          savedBgIndex.clamp(0, backgroundPresets.length - 1),
     );
   }
 
-  /// บันทึกขนาดตัวอักษรที่เลือกลง Hive แล้วอัปเดต state
   Future<void> setFontScale(FontScale scale) async {
     final box = Hive.box(HiveBoxes.screenTimeSettings);
     await box.put('fontScaleIndex', scale.index);
     state = state.copyWith(fontScale: scale);
   }
 
-  /// บันทึกแบบตัวอักษรที่เลือกลง Hive แล้วอัปเดต state
   Future<void> setAppFont(AppFont font) async {
     final box = Hive.box(HiveBoxes.screenTimeSettings);
     await box.put('fontFamilyIndex', font.index);
     state = state.copyWith(appFont: font);
   }
+
+  /// เปลี่ยนโหมดธีม (สว่าง/มืด/ตามระบบ)
+  Future<void> setThemeMode(AppThemeMode mode) async {
+    final box = Hive.box(HiveBoxes.screenTimeSettings);
+    await box.put('themeModeIndex', mode.index);
+    state = state.copyWith(themeMode: mode);
+  }
+
+  /// เปลี่ยนสีพื้นหลัง
+  Future<void> setBackgroundPreset(int index) async {
+    final box = Hive.box(HiveBoxes.screenTimeSettings);
+    await box.put('backgroundPresetIndex', index);
+    state = state.copyWith(backgroundPresetIndex: index);
+  }
 }
 
-/// Provider หลักที่ UI ใช้เข้าถึง state และ notifier ของหน้าตั้งค่า
+/// Provider หลักที่ UI ใช้เข้าถึง state ของหน้าตั้งค่า
 final settingsProvider =
     NotifierProvider<SettingsNotifier, SettingsState>(SettingsNotifier.new);
