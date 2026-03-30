@@ -17,16 +17,23 @@
 │          │            │           │           │          │
 │  ┌───────┴────────────┴───────────┴───────────┴──────┐  │
 │  │           State Layer (Riverpod Notifiers)        │  │
-│  │  ┌──────────────┐ ┌────────────┐ ┌─────────────┐ │  │
-│  │  │ soundMatch   │ │ assessment │ │ screenTime  │ │  │
-│  │  │ Provider     │ │ Provider   │ │ Provider    │ │  │
-│  │  ├──────────────┤ ├────────────┤ ├─────────────┤ │  │
-│  │  │ sequence     │ │ settings   │ │             │ │  │
-│  │  │ Provider     │ │ Provider   │ │             │ │  │
-│  │  └──────┬───────┘ └─────┬──────┘ └──────┬──────┘ │  │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌───────────┐  │  │
+│  │  │ soundMatch   │ │ memoryMatch  │ │ colorSeq  │  │  │
+│  │  │ Provider     │ │ Provider     │ │ Provider  │  │  │
+│  │  ├──────────────┤ ├──────────────┤ ├───────────┤  │  │
+│  │  │ assessment   │ │ screenTime   │ │ settings  │  │  │
+│  │  │ Provider     │ │ Provider     │ │ Provider  │  │  │
+│  │  └──────┬───────┘ └──────┬──────┘ └─────┬─────┘  │  │
 │  └─────────┼───────────────┼───────────────┼────────┘  │
 │            │               │               │            │
 │  ┌─────────┴───────────────┴───────────────┴────────┐  │
+│  │       Service Layer (Google Sheets + Storage)     │  │
+│  │  ┌──────────────────────┐                         │  │
+│  │  │ GoogleSheetsService  │  (Singleton + Cache)    │  │
+│  │  └──────────┬───────────┘                         │  │
+│  └─────────────┼────────────────────────────────────┘  │
+│                │                                        │
+│  ┌─────────────┴────────────────────────────────────┐  │
 │  │           Data Layer (Hive Local Storage)         │  │
 │  │  ┌──────────────────────────────────────────────┐ │  │
 │  │  │            StorageService (Singleton)         │ │  │
@@ -60,6 +67,9 @@ lumina/lib/
 │   ├── home/
 │   │   └── home_screen.dart           # หน้าหลัก + Bottom Navigation
 │   │
+│   ├── splash/
+│   │   └── splash_screen.dart         # หน้า Splash Screen
+│   │
 │   ├── assessment/                    # แบบประเมินสมอง
 │   │   ├── assessment_screen.dart     # หน้าจอหลัก + Progress Bar
 │   │   ├── assessment_state.dart      # State + Notifier (Riverpod)
@@ -77,7 +87,17 @@ lumina/lib/
 │   │   │   ├── sound_match_result.dart   # หน้าผลคะแนน
 │   │   │   └── word_emoji_map.dart    # แผนที่ คำ→Emoji
 │   │   │
-│   │   └── sequence/                  # เกมเรียงลำดับ
+│   │   ├── memory_match/              # เกมจับคู่ภาพ
+│   │   │   ├── memory_match_game.dart     # หน้าเล่นเกม
+│   │   │   ├── memory_match_provider.dart # State + Logic
+│   │   │   └── memory_match_result.dart   # หน้าผลคะแนน
+│   │   │
+│   │   ├── color_sequence/            # เกมลำดับสี
+│   │   │   ├── color_sequence_game.dart     # หน้าเล่นเกม
+│   │   │   ├── color_sequence_provider.dart # State + Logic
+│   │   │   └── color_sequence_result.dart   # หน้าผลคะแนน
+│   │   │
+│   │   └── sequence/                  # เกมเรียงลำดับ (unused)
 │   │       ├── sequence_game.dart     # หน้าเล่นเกม
 │   │       ├── sequence_provider.dart # State + Logic
 │   │       ├── sequence_data.dart     # ชุดข้อมูลลำดับ
@@ -92,12 +112,15 @@ lumina/lib/
 │   │
 │   ├── settings/                      # ตั้งค่า
 │   │   ├── settings_screen.dart       # หน้าตั้งค่า
-│   │   └── settings_provider.dart     # จัดเก็บ Font & Scale
+│   │   └── settings_provider.dart     # จัดเก็บ ฟอนต์ + ขนาด + ธีม + สีพื้นหลัง
 │   │
 │   └── ai_tips/
 │       └── tips_widget.dart           # Widget คำแนะนำรายวัน
 │
 └── shared/                            # โค้ดที่ใช้ร่วมกัน
+    ├── services/                      # บริการภายนอก
+    │   └── google_sheets_service.dart # ดึงข้อมูลจาก Google Sheets (Singleton + Cache)
+    │
     ├── storage/                       # ระบบจัดเก็บข้อมูล (Hive)
     │   ├── storage_service.dart       # Singleton service หลัก
     │   ├── assessment_result.dart     # Model ผลประเมิน
@@ -149,13 +172,22 @@ final state = ref.watch(soundMatchProvider);
 ref.read(soundMatchProvider.notifier).selectAnswer('แมว');
 ```
 
-### 3.3 Singleton Pattern (StorageService)
+### 3.3 Singleton Pattern (StorageService + GoogleSheetsService)
 `StorageService` ใช้ Singleton เพื่อให้ทุกส่วนของแอปเข้าถึง Hive ผ่านจุดเดียว:
 ```dart
 class StorageService {
   StorageService._();
   static final _instance = StorageService._();
   factory StorageService() => _instance;
+}
+```
+`GoogleSheetsService` ใช้ Singleton + Cache เพื่อดึงข้อมูลจาก Google Sheets โดยไม่ต้องเรียกซ้ำ:
+```dart
+class GoogleSheetsService {
+  GoogleSheetsService._();
+  static final _instance = GoogleSheetsService._();
+  factory GoogleSheetsService() => _instance;
+  // cache data ไว้ในหน่วยความจำ
 }
 ```
 
@@ -168,36 +200,66 @@ UI สร้างจาก Widget เล็ก ๆ ประกอบกัน 
 
 ## 4. Data Flow (การไหลของข้อมูล)
 
-### 4.1 การเล่นเกมจับคู่เสียง
+### 4.1 การเล่นเกมจับคู่ภาพ (Memory Match)
 ```
 User กดเล่น
     │
     ▼
-SoundMatchNotifier.startGame()
-    │  สุ่มคำ 10 ข้อ + ตัวเลือก 4 ตัว
+MemoryMatchNotifier.startGame()
+    │  สร้างการ์ดคู่ + สลับตำแหน่ง
     ▼
-UI แสดง Grid 2x2 + เล่นเสียง TTS
+UI แสดง Grid การ์ดคว่ำ
     │
     ▼
-User เลือกคำตอบ
+User เปิดการ์ดใบที่ 1
     │
     ▼
-SoundMatchNotifier.selectAnswer(word)
-    │  ตรวจคำตอบ + แสดง Feedback (เขียว/แดง)
+MemoryMatchNotifier.flipCard(index)
+    │  เปิดการ์ด + รอเปิดใบที่ 2
     ▼
-Timer 1.5 วินาที
+User เปิดการ์ดใบที่ 2
     │
     ▼
-SoundMatchNotifier.advanceRound()
-    │  ถ้าข้อสุดท้าย → บันทึกคะแนนลง Hive
+MemoryMatchNotifier.flipCard(index)
+    │  ตรวจว่าตรงกันหรือไม่
+    │  ตรงกัน → เก็บคู่ / ไม่ตรง → คว่ำกลับ
+    ▼
+ถ้าเปิดครบทุกคู่ → บันทึกคะแนนลง Hive
+    │
     ▼
 StorageService.saveGameScore()
     │
     ▼
-Navigate → SoundMatchResult (แสดงดาว + คะแนน)
+Navigate → MemoryMatchResult (แสดงดาว + คะแนน)
 ```
 
-### 4.2 การจับเวลาหน้าจอ
+### 4.2 การเล่นเกมลำดับสี (Color Sequence)
+```
+User กดเล่น
+    │
+    ▼
+ColorSequenceNotifier.startGame()
+    │  สร้างลำดับสีที่ต้องจำ
+    ▼
+UI แสดงลำดับสี (flash ทีละสี)
+    │
+    ▼
+User กดสีตามลำดับ
+    │
+    ▼
+ColorSequenceNotifier.selectColor(color)
+    │  ตรวจลำดับ ถูก → ต่อ / ผิด → จบ
+    ▼
+ถ้ากดครบลำดับ → เพิ่มระดับ หรือจบเกม
+    │
+    ▼
+StorageService.saveGameScore()
+    │
+    ▼
+Navigate → ColorSequenceResult (แสดงดาว + คะแนน)
+```
+
+### 4.3 การจับเวลาหน้าจอ
 ```
 User กด "เริ่มจับเวลา"
     │
@@ -225,7 +287,7 @@ UI แสดง Alert Dialog
 User เลือก "หยุด" หรือ "ใช้ต่อ"
 ```
 
-### 4.3 แบบประเมิน
+### 4.4 แบบประเมิน
 ```
 User กด "เริ่มประเมิน"
     │
@@ -261,9 +323,10 @@ StorageService.saveAssessmentResult()
 |----------|-----------|---------|
 | `assessmentProvider` | `AssessmentState` | จัดการแบบประเมิน 4 ขั้นตอน |
 | `soundMatchProvider` | `SoundMatchState` | จัดการเกมจับคู่เสียง |
-| `sequenceGameProvider` | `SequenceGameState` | จัดการเกมเรียงลำดับ |
+| `memoryMatchProvider` | `MemoryMatchState` | จัดการเกมจับคู่ภาพ |
+| `colorSequenceProvider` | `ColorSequenceState` | จัดการเกมลำดับสี |
 | `screenTimeProvider` | `ScreenTimeState` | จับเวลา + ประวัติสัปดาห์ |
-| `settingsProvider` | `SettingsState` | ฟอนต์ + ขนาดตัวอักษร |
+| `settingsProvider` | `SettingsState` | ฟอนต์ + ขนาด + ธีม + สีพื้นหลัง |
 
 ### 5.2 หลักการ State Management
 1. **Immutable State**: ทุก State class ใช้ `final` fields + `copyWith()` method
@@ -274,17 +337,27 @@ StorageService.saveAssessmentResult()
 
 ## 6. Theme & Design System
 
-### 6.1 สี (WCAG AA Compliant)
+### 6.1 สี (Teal/Mint Palette)
+
+**Light Mode:**
 ```
-Primary:       #3B6FD4  (5.2:1 contrast on white)
-Success:       #2E7D32  (5.9:1)
-Warning:       #E65100  (5.5:1)
-Error:         #C62828  (7.8:1)
-Text Primary:  #1A1A2E  (15.4:1)
-Text Secondary:#4B5563  (7.0:1)
-Background:    #F8F9FA
-Surface:       #FFFFFF
+Primary:        #3D7F80  (Teal หลัก)
+Secondary:      #5BC5A7  (Mint เสริม)
+Success:        #1B7A3D  (เขียวเข้ม)
+Text Primary:   #2D3436
+Text Secondary: #6B7B8A
+Background:     #F0F5F5
 ```
+
+**Dark Mode:**
+```
+Primary:        #6FD5B7  (Mint สว่าง)
+Secondary:      #4A8B8C  (Teal เข้ม)
+Background:     #162224
+Surface:        #1E2D2F
+```
+
+> หมายเหตุ: รองรับ Light/Dark mode + 8 background presets ให้ผู้ใช้เลือก
 
 ### 6.2 ขนาดตัวอักษร (พร้อม Font Scale)
 ```
@@ -344,6 +417,7 @@ Input:  12px
 | shared_preferences | 2.5.4 | Preferences พื้นฐาน |
 | shimmer | 3.0.0 | Loading Animation |
 | go_router | 17.1.0 | Navigation (มีแต่ยังไม่ใช้หลัก) |
+| http | 1.4.0 | HTTP client สำหรับดึงข้อมูลจาก Google Sheets |
 
 ---
 
