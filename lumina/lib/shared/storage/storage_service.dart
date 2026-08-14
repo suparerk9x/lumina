@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'appointment.dart';
 import 'assessment_result.dart';
 import 'game_score.dart';
 import 'hive_boxes.dart';
@@ -141,6 +142,39 @@ class StorageService {
       await box.put('profile', profile.toMap());
     } catch (e, stack) {
       _log('saveUserProfile', e, stack);
+    }
+  }
+
+  // ─── นัดหมายแพทย์ (Appointments) ──────────────────────────────────
+
+  /// ดึงนัดหมายทั้งหมด เรียงตามวันเวลา (ใกล้สุดก่อน)
+  List<Appointment> getAppointments() {
+    try {
+      final box = Hive.box(HiveBoxes.appointments);
+      final list = _getMapList(box, 'items');
+      final result = <Appointment>[];
+      for (final m in list) {
+        try {
+          result.add(Appointment.fromMap(m));
+        } catch (_) {
+          // ข้ามรายการที่เสียหาย
+        }
+      }
+      result.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      return result;
+    } catch (e, stack) {
+      _log('getAppointments', e, stack);
+      return [];
+    }
+  }
+
+  /// บันทึกรายการนัดหมายทั้งหมด (ใช้ตอน เพิ่ม/แก้/ลบ)
+  Future<void> saveAppointments(List<Appointment> items) async {
+    try {
+      final box = Hive.box(HiveBoxes.appointments);
+      await box.put('items', items.map((a) => a.toMap()).toList());
+    } catch (e, stack) {
+      _log('saveAppointments', e, stack);
     }
   }
 

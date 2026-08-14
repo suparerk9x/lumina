@@ -11,6 +11,8 @@ class HiveBoxes {
   static const String gameScores = 'game_scores'; // กล่องคะแนนเกม
   static const String cachedGameData = 'cached_game_data'; // กล่องข้อมูลเกมจาก Google Sheets
   static const String userProfile = 'user_profile'; // กล่องโปรไฟล์ผู้ใช้ + รายชื่อครอบครัว
+  static const String appointments = 'appointments'; // กล่องนัดหมายแพทย์
+  static const String flashCard = 'flash_card'; // กล่องสถานะ flash card รายวัน
 
   /// รายชื่อ box ทั้งหมด ใช้ตอนเปิดแอปเพื่อเปิด box ทุกตัว
   static const List<String> all = [
@@ -19,5 +21,7 @@ class HiveBoxes {
     gameScores,
     cachedGameData,
     userProfile,
+    appointments,
+    flashCard,
   ];
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
+import 'shared/services/notification_service.dart';
 import 'shared/storage/hive_boxes.dart';
 
 /// ไฟล์นี้เป็นจุดเริ่มต้นของแอป Demenish AI
@@ -20,6 +21,9 @@ void main() async {
   for (final name in HiveBoxes.all) {
     await Hive.openBox(name);
   }
+
+  // เตรียมระบบแจ้งเตือน (ใช้กับเตือนนัดหมายแพทย์)
+  await NotificationService().init();
 
   // รันแอป โดยครอบด้วย ProviderScope เพื่อให้ Riverpod จัดการ state ได้ทั้งแอป
   runApp(

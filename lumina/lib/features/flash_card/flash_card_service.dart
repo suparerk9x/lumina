@@ -1,0 +1,86 @@
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../shared/storage/hive_boxes.dart';
+import '../../shared/storage/storage_service.dart';
+
+/// การ์ดกระตุ้นความจำ 1 ใบ (ข้อ 8)
+/// - ถ้ามีรูปครอบครัว: แสดงรูป + ถามว่า "คนนี้คือใคร" (answer = ชื่อ)
+/// - ถ้าไม่มี: แสดงคำถามกระตุ้นความจำให้ตอบในใจ (answer = null)
+class FlashCard {
+  const FlashCard({
+    required this.question,
+    this.imageBase64,
+    this.answer,
+  });
+
+  final String question;
+  final String? imageBase64;
+  final String? answer;
+}
+
+/// Service สำหรับ flash card รายวัน — คุมว่าจะแสดงวันละครั้ง และสร้างการ์ด
+class FlashCardService {
+  FlashCardService._();
+  static final FlashCardService _instance = FlashCardService._();
+  factory FlashCardService() => _instance;
+
+  /// คำถามกระตุ้นความจำ (ใช้เมื่อยังไม่มีรูปครอบครัว)
+  static const List<String> _prompts = [
+    'วันนี้เป็นวันอะไร?',
+    'ตอนนี้ประมาณกี่โมงแล้ว?',
+    'เมื่อเช้ารับประทานอะไร?',
+    'เดือนนี้เดือนอะไร?',
+    'พรุ่งนี้ตั้งใจจะทำอะไร?',
+    'เมื่อวานได้คุยกับใครบ้าง?',
+    'ตอนนี้อยู่ที่ไหน?',
+  ];
+
+  Box get _box => Hive.box(HiveBoxes.flashCard);
+
+  String _todayKey() {
+    final n = DateTime.now();
+    return '${n.year}-${n.month.toString().padLeft(2, '0')}-'
+        '${n.day.toString().padLeft(2, '0')}';
+  }
+
+  /// ยังไม่ได้แสดงการ์ดของวันนี้หรือยัง
+  bool shouldShowToday() {
+    try {
+      return _box.get('lastShown') != _todayKey();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// บันทึกว่าแสดงการ์ดของวันนี้แล้ว
+  Future<void> markShownToday() async {
+    try {
+      await _box.put('lastShown', _todayKey());
+    } catch (_) {
+      // เงียบไว้ — ไม่ใช่เรื่องคอขาดบาดตาย
+    }
+  }
+
+  /// สร้างการ์ดของวันนี้ (คืน null ถ้าไม่มีอะไรจะแสดง)
+  FlashCard? buildTodayCard() {
+    final dayIndex = DateTime.now().difference(DateTime(2020)).inDays;
+
+    final contacts = StorageService().getUserProfile().contacts;
+    final withPhoto =
+        contacts.where((c) => (c.photoBase64 ?? '').isNotEmpty).toList();
+
+    if (withPhoto.isNotEmpty) {
+      final c = withPhoto[dayIndex % withPhoto.length];
+      return FlashCard(
+        question: 'คนนี้คือใคร?',
+        imageBase64: c.photoBase64,
+        answer: c.name,
+      );
+    }
+
+    if (_prompts.isNotEmpty) {
+      return FlashCard(question: _prompts[dayIndex % _prompts.length]);
+    }
+    return null;
+  }
+}

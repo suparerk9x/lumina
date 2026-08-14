@@ -9,7 +9,10 @@ import '../games/color_sequence/color_sequence_game.dart';
 import '../games/memory_match/memory_match_game.dart';
 import '../games/sound_match/sound_match_game.dart';
 import '../ai_tips/tips_widget.dart';
+import '../appointments/appointments_screen.dart';
 import '../family_call/family_call_screen.dart';
+import '../flash_card/flash_card_dialog.dart';
+import '../flash_card/flash_card_service.dart';
 import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../screen_time/screen_time_screen.dart';
@@ -26,6 +29,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // แสดง flash card รายวัน ครั้งแรกที่เข้าแอปของวันนั้น (ข้อ 8)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowFlashCard());
+  }
+
+  Future<void> _maybeShowFlashCard() async {
+    final service = FlashCardService();
+    if (!service.shouldShowToday()) return;
+    final card = service.buildTodayCard();
+    if (card == null) return;
+    await service.markShownToday();
+    if (!mounted) return;
+    await showFlashCardDialog(context, card);
+  }
 
   final List<Widget> _tabs = const [
     _GamesTab(),
@@ -222,6 +242,20 @@ class _GamesTab extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const FamilyCallScreen(),
+                ),
+              );
+            },
+          ),
+          _GameCard(
+            icon: Icons.event_available_rounded,
+            title: 'นัดหมายแพทย์',
+            subtitle: 'บันทึกนัด แล้วเตือนก่อนถึงเวลา',
+            color: const Color(0xFFFCE4EC),
+            iconColor: const Color(0xFFD81B60),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AppointmentsScreen(),
                 ),
               );
             },
