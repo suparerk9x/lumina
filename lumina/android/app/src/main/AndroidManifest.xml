@@ -2,6 +2,9 @@
     <!-- แจ้งเตือนนัดหมาย (ข้อ 1) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- เตือนระยะห่างหน้าจอ / ตรวจง่วง ใช้กล้องหน้า (ข้อ 4, 6) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
 
     <application
         android:label="Demenish AI"
@@ -34,6 +37,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- ให้ ML Kit ดาวน์โหลดโมเดลตรวจใบหน้าตอนติดตั้ง (ข้อ 4, 6) -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="face" />
 
         <!-- ตัวรับการแจ้งเตือนแบบตั้งเวลา + ตั้งใหม่หลังเปิดเครื่อง (flutter_local_notifications) -->
         <receiver android:exported="false"

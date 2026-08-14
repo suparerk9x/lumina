@@ -6,6 +6,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ใช้เลือกรูปสมาชิกครอบครัวสำหรับปุ่มโทรด่วน</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ใช้กล้องหน้าตรวจระยะห่างจากจอเป็นช่วง เพื่อเตือนถนอมสายตา</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>

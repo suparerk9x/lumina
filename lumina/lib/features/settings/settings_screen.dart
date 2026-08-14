@@ -7,6 +7,7 @@ import '../../shared/storage/storage_service.dart';
 import '../../shared/storage/user_profile.dart';
 import '../profile/profile_provider.dart';
 import '../profile/profile_screen.dart';
+import '../screen_distance/screen_distance_provider.dart';
 import '../screen_time/screen_time_provider.dart';
 import 'settings_provider.dart';
 
@@ -26,6 +27,10 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // ─── ข้อมูลของฉัน (ชื่อ/อายุ/เพศ/ครอบครัว) ──────────
           _ProfileTile(),
+          const SizedBox(height: 20),
+
+          // ─── เตือนระยะห่างหน้าจอ (ใช้กล้อง) ──────────
+          _ScreenDistanceSection(),
           const SizedBox(height: 20),
 
           // ─── ส่วนเลือกโหมดธีม (สว่าง/มืด/ตามระบบ) ──────────
@@ -249,6 +254,100 @@ class _ProfileTile extends ConsumerWidget {
             MaterialPageRoute(builder: (_) => const ProfileScreen()),
           );
         },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// เตือนระยะห่างหน้าจอ (Screen Distance) — ใช้กล้องหน้า sample เป็นช่วง
+// ═══════════════════════════════════════════════════════════════
+
+class _ScreenDistanceSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(screenDistanceProvider);
+    final notifier = ref.read(screenDistanceProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppTheme.darkPrimary : AppTheme.primary;
+    final secondary =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primary.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.visibility_rounded,
+                      color: primary, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('เตือนระยะห่างหน้าจอ',
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+                Switch(
+                  value: state.enabled,
+                  onChanged: (v) => notifier.setEnabled(v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'ใช้กล้องหน้าตรวจเป็นช่วง เฉพาะตอนเปิดแอป '
+              'ถ้านั่งใกล้จอเกินไปจะเตือนให้ถอยห่าง',
+              style: TextStyle(fontSize: 15, color: secondary),
+            ),
+            if (state.enabled) ...[
+              const SizedBox(height: 16),
+              Text('ตรวจทุก', style: TextStyle(fontSize: 15, color: secondary)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: kDistanceIntervals.map((m) {
+                  final selected = state.intervalMinutes == m;
+                  return ChoiceChip(
+                    label: Text('$m นาที', style: const TextStyle(fontSize: 16)),
+                    selected: selected,
+                    onSelected: (_) => notifier.setInterval(m),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final tooClose = await notifier.checkNow();
+                    if (!context.mounted) return;
+                    final msg = tooClose == null
+                        ? 'ไม่พบใบหน้า ลองมองที่กล้องแล้วลองใหม่'
+                        : (tooClose
+                            ? 'นั่งใกล้เกินไป ถอยห่างอีกนิดนะ'
+                            : 'ระยะห่างกำลังดี 👍');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(msg)),
+                    );
+                  },
+                  icon: const Icon(Icons.camera_alt_rounded),
+                  label: const Text('ทดสอบตอนนี้'),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

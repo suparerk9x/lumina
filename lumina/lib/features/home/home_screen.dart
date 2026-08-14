@@ -14,27 +14,66 @@ import '../family_call/family_call_screen.dart';
 import '../flash_card/flash_card_dialog.dart';
 import '../flash_card/flash_card_service.dart';
 import '../history/history_screen.dart';
+import '../scam_check/scam_check_screen.dart';
+import '../screen_distance/screen_distance_provider.dart';
 import '../settings/settings_screen.dart';
 import '../screen_time/screen_time_screen.dart';
 
 /// หน้าหลักของแอป Demenish AI
 /// มี Bottom Navigation Bar 4 แท็บ: ฝึกสมอง, ประเมิน, จำกัดเวลา, ตั้งค่า
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // แสดง flash card รายวัน ครั้งแรกที่เข้าแอปของวันนั้น (ข้อ 8)
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowFlashCard());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowFlashCard();
+      // เริ่มตรวจระยะห่างหน้าจอถ้าเปิดไว้ (ข้อ 4) — foreground เท่านั้น
+      ref.read(screenDistanceProvider.notifier).setForeground(true);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // ตรวจกล้องเฉพาะตอนแอปเปิดอยู่ (ข้อ 4/6 — parity iOS/Android)
+    final isForeground = state == AppLifecycleState.resumed;
+    ref.read(screenDistanceProvider.notifier).setForeground(isForeground);
+  }
+
+  void _showTooCloseWarning() {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text(
+          'นั่งใกล้จอเกินไป ถอยห่างอีกนิดนะ เพื่อถนอมสายตา',
+          style: TextStyle(fontSize: 18),
+        ),
+        backgroundColor: AppTheme.warning,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   Future<void> _maybeShowFlashCard() async {
@@ -57,6 +96,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // เตือนเมื่อ monitor ตรวจพบว่านั่งใกล้จอเกินไป (ข้อ 4)
+    ref.listen<ScreenDistanceState>(screenDistanceProvider, (prev, next) {
+      if (prev != null && next.warningSeq > prev.warningSeq) {
+        _showTooCloseWarning();
+      }
+    });
 
     return Scaffold(
       body: IndexedStack(
@@ -256,6 +302,20 @@ class _GamesTab extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const AppointmentsScreen(),
+                ),
+              );
+            },
+          ),
+          _GameCard(
+            icon: Icons.shield_rounded,
+            title: 'ตรวจข้อความหลอกลวง',
+            subtitle: 'วางข้อความ SMS มาเช็กว่าปลอดภัยไหม',
+            color: const Color(0xFFFFF3E0),
+            iconColor: const Color(0xFFEF6C00),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ScamCheckScreen(),
                 ),
               );
             },
