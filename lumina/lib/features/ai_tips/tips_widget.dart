@@ -59,7 +59,7 @@ class _AiTipsCardState extends State<AiTipsCard> {
         return 'เยี่ยมมาก! สมองแข็งแรงขึ้น 🌟 ทำต่อไปนะ';
       }
     } catch (e) {
-      developer.log('AiTipsCard error: $e', name: 'Lumina');
+      developer.log('AiTipsCard error: $e', name: 'DemenishAI');
     }
     return _defaultTips[DateTime.now().day % _defaultTips.length];
   }

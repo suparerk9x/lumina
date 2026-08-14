@@ -1,11 +1,11 @@
 {
-    "name": "lumina",
-    "short_name": "lumina",
+    "name": "Demenish AI",
+    "short_name": "Demenish AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "แอปฝึกสมองและดูแลสุขภาพสำหรับผู้สูงอายุ",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

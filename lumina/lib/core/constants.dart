@@ -4,7 +4,7 @@
 /// คลาสรวมค่าคงที่ทั้งหมดของแอป ใช้ static const เพื่อไม่ต้องสร้าง object
 class AppConstants {
   // ชื่อและเวอร์ชันของแอป
-  static const String appName = 'Lumina';
+  static const String appName = 'Demenish AI';
   static const String appVersion = '1.0.0';
 
   // ─── Word Pool (Memory Game — 30 Thai words) ────────────

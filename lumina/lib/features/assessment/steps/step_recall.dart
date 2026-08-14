@@ -18,7 +18,8 @@ class StepRecall extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(assessmentProvider);
     final selected = state.selectedRecallWords; // คำที่ผู้ใช้เลือกแล้ว
-    final options = state.recallOptions; // ตัวเลือกทั้ง 6 คำ
+    final options = state.recallOptions; // ตัวเลือกทั้งหมด (คำถูก + คำหลอก)
+    final pickLimit = state.memorizeWords.length; // เลือกได้เท่าจำนวนคำที่ต้องจำ
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -51,7 +52,7 @@ class StepRecall extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'เลือกได้ 3 คำ',
+              'เลือกได้ $pickLimit คำ',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.warning,
                     fontWeight: FontWeight.w600,
@@ -69,13 +70,13 @@ class StepRecall extends ConsumerWidget {
                 word: word,
                 isSelected: isSelected,
                 onTap: () {
-                  // ถ้าเลือกครบ 3 คำแล้ว ไม่ให้เลือกเพิ่ม แสดง SnackBar แจ้งเตือน
-                  if (!isSelected && selected.length >= 3) {
+                  // ถ้าเลือกครบแล้ว ไม่ให้เลือกเพิ่ม แสดง SnackBar แจ้งเตือน
+                  if (!isSelected && selected.length >= pickLimit) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text(
-                          'เลือกได้ 3 คำเท่านั้น กดเอาออกก่อนเลือกใหม่',
-                          style: TextStyle(fontSize: 18),
+                        content: Text(
+                          'เลือกได้ $pickLimit คำเท่านั้น กดเอาออกก่อนเลือกใหม่',
+                          style: const TextStyle(fontSize: 18),
                         ),
                         backgroundColor: AppTheme.warning,
                         behavior: SnackBarBehavior.floating,
@@ -104,7 +105,7 @@ class StepRecall extends ConsumerWidget {
             child: Text(
               selected.isEmpty
                   ? 'เลือกคำที่จำได้'
-                  : 'ยืนยันคำตอบ (${selected.length}/3)',
+                  : 'ยืนยันคำตอบ (${selected.length}/$pickLimit)',
             ),
           ),
         ],

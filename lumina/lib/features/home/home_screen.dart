@@ -9,11 +9,12 @@ import '../games/color_sequence/color_sequence_game.dart';
 import '../games/memory_match/memory_match_game.dart';
 import '../games/sound_match/sound_match_game.dart';
 import '../ai_tips/tips_widget.dart';
+import '../family_call/family_call_screen.dart';
 import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../screen_time/screen_time_screen.dart';
 
-/// หน้าหลักของแอป Lumina
+/// หน้าหลักของแอป Demenish AI
 /// มี Bottom Navigation Bar 4 แท็บ: ฝึกสมอง, ประเมิน, จำกัดเวลา, ตั้งค่า
 
 class HomeScreen extends StatefulWidget {
@@ -184,7 +185,7 @@ class _GamesTab extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.asset(
-              'assets/images/logo.jpg',
+              'assets/images/icon.png',
               width: 36,
               height: 36,
               fit: BoxFit.cover,
@@ -211,6 +212,20 @@ class _GamesTab extends StatelessWidget {
           const _GreetingCard(),
           const AiTipsCard(),
           const SizedBox(height: 8),
+          _GameCard(
+            icon: Icons.phone_in_talk_rounded,
+            title: 'โทรหาครอบครัว',
+            subtitle: 'กดโทรหาลูกหลานได้ทันที',
+            color: const Color(0xFFE3F2FD),
+            iconColor: Colors.blue,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const FamilyCallScreen(),
+                ),
+              );
+            },
+          ),
           _GameCard(
             icon: Icons.music_note_rounded,
             title: 'จับคู่เสียง',

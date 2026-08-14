@@ -7,8 +7,8 @@ import 'features/settings/settings_provider.dart';
 import 'features/splash/splash_screen.dart';
 
 /// Widget หลักของแอป ใช้ ConsumerWidget เพื่อดึงค่าการตั้งค่าจาก Riverpod
-class LuminaApp extends ConsumerWidget {
-  const LuminaApp({super.key});
+class DemenishApp extends ConsumerWidget {
+  const DemenishApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

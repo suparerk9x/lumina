@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../shared/storage/storage_service.dart';
 import '../home/home_screen.dart';
+import '../onboarding/onboarding_screen.dart';
 
-/// หน้า Splash Screen แสดงโลโก้ Lumina เมื่อเปิดแอป
+/// หน้า Splash Screen แสดงโลโก้ Demenish AI เมื่อเปิดแอป
 /// แสดง 2 วินาทีแล้ว navigate ไปหน้าหลัก
 
 class SplashScreen extends StatefulWidget {
@@ -32,19 +34,20 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate ไปหน้าหลักหลัง 2 วินาที
+    // Navigate หลัง 2 วินาที: ครั้งแรกไป Onboarding, ครั้งต่อไปไปหน้าหลัก
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const HomeScreen(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-      }
+      if (!mounted) return;
+      final onboardingDone = StorageService().getUserProfile().onboardingDone;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) =>
+              onboardingDone ? const HomeScreen() : const OnboardingScreen(),
+          transitionsBuilder: (_, animation, _, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
     });
   }
 
@@ -72,29 +75,12 @@ class _SplashScreenState extends State<SplashScreen>
               ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: Image.asset(
-                  'assets/images/logo.jpg',
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.cover,
+                  'assets/images/logo.png',
+                  width: 260,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                'Lumina',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 2,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withAlpha(40),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
               Text(
                 'A Brain Tracker App',
                 style: TextStyle(

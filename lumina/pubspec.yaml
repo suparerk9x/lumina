@@ -44,6 +44,8 @@ dependencies:
   flutter_tts: ^4.2.5
   shimmer: ^3.0.0
   http: ^1.4.0
+  url_launcher: ^6.3.1
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +57,14 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# ไอคอนแอป (ข้อ 9) — gen ด้วย: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -69,6 +79,8 @@ flutter:
 
   assets:
     - assets/images/logo.jpg
+    - assets/images/logo.png
+    - assets/images/icon.png
 
   fonts:
     - family: Sarabun

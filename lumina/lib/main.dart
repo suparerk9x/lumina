@@ -5,7 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'app.dart';
 import 'shared/storage/hive_boxes.dart';
 
-/// ไฟล์นี้เป็นจุดเริ่มต้นของแอป Lumina
+/// ไฟล์นี้เป็นจุดเริ่มต้นของแอป Demenish AI
 /// ทำหน้าที่เตรียมระบบ (Hive database) แล้วรันแอป
 
 /// ฟังก์ชันหลักที่ระบบเรียกเป็นอันดับแรกเมื่อเปิดแอป
@@ -24,7 +24,7 @@ void main() async {
   // รันแอป โดยครอบด้วย ProviderScope เพื่อให้ Riverpod จัดการ state ได้ทั้งแอป
   runApp(
     const ProviderScope(
-      child: LuminaApp(),
+      child: DemenishApp(),
     ),
   );
 }

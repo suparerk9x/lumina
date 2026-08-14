@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'assessment_result.dart';
 import 'game_score.dart';
 import 'hive_boxes.dart';
+import 'user_profile.dart';
 
 /// ไฟล์นี้เป็น service กลางสำหรับจัดการข้อมูลทั้งหมดในแอป
 /// ใช้ Hive (ฐานข้อมูลท้องถิ่น) เก็บผลประเมิน คะแนนเกม และการตั้งค่าเวลาจำกัด
@@ -118,9 +119,35 @@ class StorageService {
     }
   }
 
+  // ─── โปรไฟล์ผู้ใช้ (User Profile) ──────────────────────────────────
+
+  /// ดึงโปรไฟล์ผู้ใช้ ถ้ายังไม่มีจะคืนค่าเริ่มต้น (ว่าง + ยังไม่ผ่าน onboarding)
+  UserProfile getUserProfile() {
+    try {
+      final box = Hive.box(HiveBoxes.userProfile);
+      final raw = box.get('profile');
+      if (raw == null) return const UserProfile();
+      return UserProfile.fromMap(Map<dynamic, dynamic>.from(raw as Map));
+    } catch (e, stack) {
+      _log('getUserProfile', e, stack);
+      return const UserProfile();
+    }
+  }
+
+  /// บันทึกโปรไฟล์ผู้ใช้ลง Hive
+  Future<void> saveUserProfile(UserProfile profile) async {
+    try {
+      final box = Hive.box(HiveBoxes.userProfile);
+      await box.put('profile', profile.toMap());
+    } catch (e, stack) {
+      _log('saveUserProfile', e, stack);
+    }
+  }
+
   // ─── จัดการข้อมูล (Data Management) ──────────────────────────────────
 
   /// ลบข้อมูลทั้งหมดในแอป (ผลประเมิน, คะแนนเกม, การตั้งค่า)
+  /// หมายเหตุ: ไม่ลบโปรไฟล์ผู้ใช้ (ชื่อ/อายุ/เพศ/รายชื่อครอบครัว)
   Future<void> clearAllData() async {
     try {
       await Hive.box(HiveBoxes.assessmentResults).clear();
@@ -144,7 +171,7 @@ class StorageService {
   void _log(String method, Object error, StackTrace stack) {
     developer.log(
       'StorageService.$method failed: $error',
-      name: 'Lumina',
+      name: 'DemenishAI',
       error: error,
       stackTrace: stack,
     );

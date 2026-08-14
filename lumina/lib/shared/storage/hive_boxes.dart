@@ -10,6 +10,7 @@ class HiveBoxes {
   static const String screenTimeSettings = 'screen_time_settings'; // กล่องตั้งค่าเวลาหน้าจอ
   static const String gameScores = 'game_scores'; // กล่องคะแนนเกม
   static const String cachedGameData = 'cached_game_data'; // กล่องข้อมูลเกมจาก Google Sheets
+  static const String userProfile = 'user_profile'; // กล่องโปรไฟล์ผู้ใช้ + รายชื่อครอบครัว
 
   /// รายชื่อ box ทั้งหมด ใช้ตอนเปิดแอปเพื่อเปิด box ทุกตัว
   static const List<String> all = [
@@ -17,5 +18,6 @@ class HiveBoxes {
     screenTimeSettings,
     gameScores,
     cachedGameData,
+    userProfile,
   ];
 }

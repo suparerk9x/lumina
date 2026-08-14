@@ -166,12 +166,12 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
           if (thaiVoice != null) {
             final voiceName = thaiVoice['name'] as String;
             await _tts.setVoice({'name': voiceName, 'locale': 'th-TH'});
-            developer.log('Thai voice set: $voiceName', name: 'Lumina');
+            developer.log('Thai voice set: $voiceName', name: 'DemenishAI');
           } else {
             // ไม่เจอเสียงไทย — ใช้ setLanguage เป็นทางเลือกสำรอง
             await _tts.setLanguage('th-TH');
             developer.log('No Thai voice found, using setLanguage fallback',
-                name: 'Lumina');
+                name: 'DemenishAI');
           }
         }
         await _tts.setSpeechRate(0.8);
@@ -181,7 +181,7 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
         await _tts.setSpeechRate(0.4); // พูดช้าลงให้ฟังชัด
       }
     } catch (e) {
-      developer.log('TTS init error: $e', name: 'Lumina');
+      developer.log('TTS init error: $e', name: 'DemenishAI');
     }
 
     if (mounted) setState(() => _ttsReady = true);
@@ -201,7 +201,7 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
     try {
       await _tts.speak(word);
     } catch (e) {
-      developer.log('TTS speak error: $e', name: 'Lumina');
+      developer.log('TTS speak error: $e', name: 'DemenishAI');
     }
   }
 

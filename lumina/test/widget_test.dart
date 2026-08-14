@@ -4,7 +4,7 @@ import 'package:lumina/app.dart';
 
 void main() {
   testWidgets('App renders home screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const LuminaApp());
+    await tester.pumpWidget(const DemenishApp());
 
     expect(find.text('ฝึกสมอง'), findsWidgets);
     expect(find.text('ประเมิน'), findsOneWidget);

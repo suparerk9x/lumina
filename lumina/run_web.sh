@@ -1,11 +1,11 @@
 #!/bin/bash
-# Lumina Web Dev Server — always port 8010
+# Demenish AI Web Dev Server — always port 8010
 # Usage: bash run_web.sh
 PORT=8010
 export PATH="/d/flutter/bin:$PATH"
 cd "$(dirname "$0")"
 
-echo "=== Lumina Dev Server ==="
+echo "=== Demenish AI Dev Server ==="
 echo "กำลังปิด server เก่า..."
 powershell.exe -Command "Get-NetTCPConnection -LocalPort $PORT -ErrorAction SilentlyContinue | Select-Object OwningProcess | ForEach-Object { Stop-Process -Id \$_.OwningProcess -Force -ErrorAction SilentlyContinue }" 2>/dev/null
 taskkill /F /IM dart.exe 2>/dev/null

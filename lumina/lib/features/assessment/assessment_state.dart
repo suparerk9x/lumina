@@ -5,6 +5,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants.dart';
 import '../../shared/storage/assessment_result.dart';
 import '../../shared/storage/storage_service.dart';
+import '../../shared/storage/user_profile.dart';
+
+// ─── การปรับความยากตามช่วงอายุ (ข้อ 5) ─────────────────────
+
+/// ตั้งค่าความยากของแบบประเมินตามช่วงอายุ
+/// ยิ่งอายุมาก ให้เวลาจำนานขึ้น และมีคำหลอกน้อยลง (ง่ายขึ้น)
+class AssessmentConfig {
+  const AssessmentConfig({
+    required this.memorizeSeconds,
+    required this.distractorCount,
+  });
+
+  final int memorizeSeconds; // เวลาที่ให้จำคำ (วินาที)
+  final int distractorCount; // จำนวนคำหลอกในขั้นตอนจำคำ
+
+  /// เลือกค่าตั้งตามช่วงอายุ (null = ใช้ค่ากลาง)
+  factory AssessmentConfig.forAge(AgeRange? age) {
+    switch (age) {
+      case AgeRange.below60:
+        return const AssessmentConfig(memorizeSeconds: 8, distractorCount: 4);
+      case AgeRange.age60to69:
+        return const AssessmentConfig(memorizeSeconds: 10, distractorCount: 3);
+      case AgeRange.age70to79:
+        return const AssessmentConfig(memorizeSeconds: 12, distractorCount: 3);
+      case AgeRange.age80plus:
+        return const AssessmentConfig(memorizeSeconds: 15, distractorCount: 2);
+      case null:
+        return const AssessmentConfig(memorizeSeconds: 10, distractorCount: 3);
+    }
+  }
+}
 
 /// ไฟล์นี้เก็บ state (สถานะ) ทั้งหมดของแบบประเมินสมอง
 /// รวมถึง Notifier ที่ควบคุมการเปลี่ยนแปลง state และคำนวณคะแนน
@@ -24,6 +55,7 @@ class AssessmentState {
     this.recallOptions = const [],
     this.selectedRecallWords = const {},
     this.isComplete = false,
+    this.memorizeSeconds = 10,
   });
 
   final int currentStep; // ขั้นตอนปัจจุบัน 0-3 (มี 4 ขั้นตอน)
@@ -31,9 +63,10 @@ class AssessmentState {
   final List<String> memorizeWords; // คำ 3 คำที่สุ่มมาให้จำ
   final int countdownScore; // คะแนนนับถอยหลัง (เต็ม 5)
   final int recallScore; // คะแนนจำคำ (เต็ม 3)
-  final List<String> recallOptions; // ตัวเลือก 6 คำ (3 ถูก + 3 หลอก)
+  final List<String> recallOptions; // ตัวเลือก (3 ถูก + คำหลอกตามช่วงอายุ)
   final Set<String> selectedRecallWords; // คำที่ผู้ใช้เลือกในขั้นตอนจำคำ
   final bool isComplete; // ทำแบบประเมินครบหรือยัง
+  final int memorizeSeconds; // เวลาให้จำคำ (ปรับตามช่วงอายุ — ข้อ 5)
 
   /// คะแนนรวมทั้งหมด = วัน/เวลา + นับถอยหลัง + จำคำ
   int get totalScore => dateTimeScore + countdownScore + recallScore;
@@ -59,6 +92,7 @@ class AssessmentState {
     List<String>? recallOptions,
     Set<String>? selectedRecallWords,
     bool? isComplete,
+    int? memorizeSeconds,
   }) {
     return AssessmentState(
       currentStep: currentStep ?? this.currentStep,
@@ -69,6 +103,7 @@ class AssessmentState {
       recallOptions: recallOptions ?? this.recallOptions,
       selectedRecallWords: selectedRecallWords ?? this.selectedRecallWords,
       isComplete: isComplete ?? this.isComplete,
+      memorizeSeconds: memorizeSeconds ?? this.memorizeSeconds,
     );
   }
 }
@@ -85,19 +120,24 @@ class AssessmentNotifier extends Notifier<AssessmentState> {
   final _random = Random();
 
   /// รีเซ็ตทุกอย่างแล้วสุ่มคำใหม่สำหรับการทดสอบความจำ
+  /// ปรับความยาก (เวลาจำ + จำนวนคำหลอก) ตามช่วงอายุในโปรไฟล์ (ข้อ 5)
   void startAssessment() {
+    final config =
+        AssessmentConfig.forAge(StorageService().getUserProfile().ageRange);
+
     // สุ่มคำจากคลังคำ แล้วเลือก 3 คำแรกให้จำ
     final pool = List<String>.from(AppConstants.wordPool)..shuffle(_random);
     final words = pool.take(3).toList();
 
-    // สร้างตัวเลือกสำหรับขั้นตอนจำคำ: 3 คำถูก + 3 คำหลอก (สุ่มลำดับ)
+    // สร้างตัวเลือกสำหรับขั้นตอนจำคำ: 3 คำถูก + คำหลอกตามช่วงอายุ (สุ่มลำดับ)
     final remaining = pool.skip(3).toList()..shuffle(_random);
-    final distractors = remaining.take(3).toList();
+    final distractors = remaining.take(config.distractorCount).toList();
     final options = [...words, ...distractors]..shuffle(_random);
 
     state = AssessmentState(
       memorizeWords: words,
       recallOptions: options,
+      memorizeSeconds: config.memorizeSeconds,
     );
   }
 

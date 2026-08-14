@@ -173,7 +173,7 @@ class ScreenTimeNotifier extends Notifier<ScreenTimeState> {
         return Duration.zero;
       });
     } catch (e) {
-      developer.log('loadWeekHistory error: $e', name: 'Lumina');
+      developer.log('loadWeekHistory error: $e', name: 'DemenishAI');
       return List.filled(7, Duration.zero);
     }
   }
@@ -215,7 +215,7 @@ class ScreenTimeNotifier extends Notifier<ScreenTimeState> {
 
       _box.put(_Keys.weekData, list);
     } catch (e) {
-      developer.log('saveToWeekHistory error: $e', name: 'Lumina');
+      developer.log('saveToWeekHistory error: $e', name: 'DemenishAI');
     }
   }
 
@@ -296,7 +296,7 @@ class ScreenTimeNotifier extends Notifier<ScreenTimeState> {
   void _sendWebNotification() {
     // Web Notifications API is handled via JS interop
     // For now we rely on the in-app alert (UI watches alertShown)
-    developer.log('Over limit alert triggered', name: 'Lumina');
+    developer.log('Over limit alert triggered', name: 'DemenishAI');
   }
 
   /// ตั้งเวลาจำกัดรายวันใหม่ และบันทึกลง Storage

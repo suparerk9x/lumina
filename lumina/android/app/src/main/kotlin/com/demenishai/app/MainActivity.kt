@@ -1,4 +1,4 @@
-package com.student.lumina.lumina
+package com.demenishai.app
 
 import io.flutter.embedding.android.FlutterActivity
 

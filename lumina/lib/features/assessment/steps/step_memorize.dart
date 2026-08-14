@@ -24,20 +24,23 @@ class StepMemorize extends ConsumerStatefulWidget {
 /// ใช้ SingleTickerProviderStateMixin สำหรับ animation ของนาฬิกาวงกลม
 class _StepMemorizeState extends ConsumerState<StepMemorize>
     with SingleTickerProviderStateMixin {
-  static const _totalSeconds = 10; // เวลาจำคำทั้งหมด (วินาที)
+  late final int _totalSeconds; // เวลาจำคำทั้งหมด (วินาที) — ปรับตามช่วงอายุ
 
   late AnimationController _timerController; // ควบคุม animation วงกลม
   late Timer _countdownTimer; // ตัวนับถอยหลังทุก 1 วินาที
-  int _secondsLeft = _totalSeconds; // เวลาที่เหลือ
+  late int _secondsLeft; // เวลาที่เหลือ
   bool _wordsHidden = false; // ซ่อนคำแล้วหรือยัง (หมดเวลา)
   bool _ready = false; // ผู้ใช้กดเริ่มแล้วหรือยัง
 
   @override
   void initState() {
     super.initState();
+    // อ่านเวลาจำที่ปรับตามช่วงอายุจาก state (ข้อ 5)
+    _totalSeconds = ref.read(assessmentProvider).memorizeSeconds;
+    _secondsLeft = _totalSeconds;
     _timerController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: _totalSeconds),
+      duration: Duration(seconds: _totalSeconds),
     );
   }
 

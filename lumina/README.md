@@ -1,6 +1,6 @@
-# lumina
+# Demenish AI
 
-A new Flutter project.
+แอปฝึกสมองและดูแลสุขภาพสำหรับผู้สูงอายุ
 
 ## Getting Started
 

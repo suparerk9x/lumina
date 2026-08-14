@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/storage_service.dart';
+import '../../shared/storage/user_profile.dart';
+import '../profile/profile_provider.dart';
+import '../profile/profile_screen.dart';
 import '../screen_time/screen_time_provider.dart';
 import 'settings_provider.dart';
 
@@ -21,6 +24,10 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // ─── ข้อมูลของฉัน (ชื่อ/อายุ/เพศ/ครอบครัว) ──────────
+          _ProfileTile(),
+          const SizedBox(height: 20),
+
           // ─── ส่วนเลือกโหมดธีม (สว่าง/มืด/ตามระบบ) ──────────
           _ThemeModeSection(
             current: settings.themeMode,
@@ -73,7 +80,7 @@ class SettingsScreen extends ConsumerWidget {
                   const Text('🧠', style: TextStyle(fontSize: 48)),
                   const SizedBox(height: 8),
                   Text(
-                    'Lumina',
+                    'Demenish AI',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 4),
@@ -193,6 +200,55 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ข้อมูลของฉัน (Profile) — ชื่อ/อายุ/เพศ/ครอบครัว
+// ═══════════════════════════════════════════════════════════════
+
+class _ProfileTile extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppTheme.darkPrimary : AppTheme.primary;
+    final secondaryText =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+
+    final parts = <String>[];
+    if (profile.ageRange != null) parts.add(profile.ageRange!.label);
+    if (profile.gender != Gender.unspecified) parts.add(profile.gender.label);
+    final subtitle =
+        parts.isEmpty ? 'แตะเพื่อตั้งชื่อ อายุ และเพศ' : parts.join(' · ');
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        leading: CircleAvatar(
+          radius: 26,
+          backgroundColor: primary.withAlpha(30),
+          child: Icon(Icons.person_rounded, color: primary, size: 28),
+        ),
+        title: Text(
+          profile.name.isEmpty ? 'ข้อมูลของฉัน' : profile.name,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(subtitle,
+              style: TextStyle(fontSize: 15, color: secondaryText)),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 28),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          );
+        },
       ),
     );
   }
