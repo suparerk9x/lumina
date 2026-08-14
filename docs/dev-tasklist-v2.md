@@ -1,8 +1,26 @@
-# Dev Task List — Lumina v2 (ฟีเจอร์ใหม่ 9 ข้อ)
+# Dev Task List — Demenish AI v2 (ฟีเจอร์ใหม่ 9 ข้อ)
 
 > อ้างอิงจาก `docs/สรุป-update.md` + โค้ดจริงใน `lumina/lib/`
-> Stack ปัจจุบัน: Flutter · Riverpod 3 · Hive · offline-first · feature-first
+> Stack ปัจจุบัน: Flutter · Riverpod 3 · Hive · feature-first
 > Effort: **S** = 1–2 วัน · **M** = 3–5 วัน · **L** = 1–2 สัปดาห์+
+
+---
+
+## ✅ สถานะ: เสร็จครบ 9/9 (v2.0.0) — 2026-08-14
+
+รีแบรนด์ **Lumina → Demenish AI** + Bundle ID `com.demenishai.app` · ทำครบทั้ง 9 ฟีเจอร์ใน 4 sprint
+ทุก sprint ผ่าน `flutter analyze` (No issues) + debug APK build
+
+| Sprint | commit | ฟีเจอร์ที่ทำ |
+|--------|--------|-------------|
+| 1 | `731be89` | รีแบรนด์ · F1 profile · #5 ประเมินตามอายุ/เพศ · #2 โทรครอบครัว · #7 ภาพ · #9 ไอคอน+ชื่อ |
+| 2 | `140a0ba` | F2 notification engine · #1 นัดหมายแพทย์ · #8 flash card |
+| 3 | `94abd33` | #3 สแกม rule-based · F3 face sampling · #4 เตือนระยะจอ |
+| 4 | `217d0fd` | #6 ตรวจง่วง + แจ้ง LINE · Cloudflare Worker backend |
+
+**ค้างทดสอบบนเครื่องจริง:** จูน `kTooCloseRatio` (0.55) + `kEyesClosedThreshold` (0.25) · deploy LINE Worker
+
+รายละเอียดแต่ละ task ด้านล่าง (checkbox `[ ]` = สเปกเดิม, ทำครบแล้วตามตารางบน)
 
 ---
 
@@ -34,7 +52,7 @@
 ### ⚙️ Platform strategy = feature parity (iOS = Android)
 - ข้อ 3: paste/share only ทั้งคู่ (ไม่มี auto)
 - ข้อ 4, 6: กล้อง sample เฉพาะตอนใช้แอป ไม่ monitor เบื้องหลัง
-- ผลข้างเคียงที่ยอมรับ: ข้อ 4/6 จะเตือนได้เฉพาะระหว่างผู้ใช้เปิด Lumina ค้างไว้ (เหมาะกับ use case "เล่นเกม/ใช้แอปนานๆ แล้วง่วง/จ้อจอใกล้")
+- ผลข้างเคียงที่ยอมรับ: ข้อ 4/6 จะเตือนได้เฉพาะระหว่างผู้ใช้เปิดแอปค้างไว้ (เหมาะกับ use case "เล่นเกม/ใช้แอปนานๆ แล้วง่วง/จ้อจอใกล้")
 
 ---
 

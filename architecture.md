@@ -1,10 +1,14 @@
-# Lumina — Architecture Document
+# Demenish AI — Architecture Document
+
+> เวอร์ชัน 2.0.0 (เดิมชื่อ Lumina) · Bundle ID `com.demenishai.app`
+> เอกสารนี้ครอบคลุมทั้งฐานเดิม (เกม/ประเมิน/screen time) และส่วนขยาย v2
+> (โปรไฟล์, โทรครอบครัว, นัดหมาย, flash card, สแกม, กล้อง/ML Kit, LINE)
 
 ## 1. สถาปัตยกรรมระดับสูง (High-Level Architecture)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      Lumina App                         │
+│                    Demenish AI App                      │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  ┌───────────────────────────────────────────────────┐  │
@@ -327,6 +331,10 @@ StorageService.saveAssessmentResult()
 | `colorSequenceProvider` | `ColorSequenceState` | จัดการเกมลำดับสี |
 | `screenTimeProvider` | `ScreenTimeState` | จับเวลา + ประวัติสัปดาห์ |
 | `settingsProvider` | `SettingsState` | ฟอนต์ + ขนาด + ธีม + สีพื้นหลัง |
+| `profileProvider` | `UserProfile` | ชื่อ/อายุ/เพศ + รายชื่อครอบครัว [v2] |
+| `appointmentsProvider` | `List<Appointment>` | นัดหมาย + ตั้ง/ยกเลิกแจ้งเตือน [v2] |
+| `screenDistanceProvider` | `ScreenDistanceState` | เตือนระยะจอ (timer + กล้อง, foreground) [v2] |
+| `drowsinessProvider` | `DrowsinessState` | ตรวจง่วง (timer + กล้อง) + แจ้ง LINE [v2] |
 
 ### 5.2 หลักการ State Management
 1. **Immutable State**: ทุก State class ใช้ `final` fields + `copyWith()` method
@@ -417,9 +425,51 @@ Input:  12px
 | shared_preferences | 2.5.4 | Preferences พื้นฐาน |
 | shimmer | 3.0.0 | Loading Animation |
 | go_router | 17.1.0 | Navigation (มีแต่ยังไม่ใช้หลัก) |
-| http | 1.4.0 | HTTP client สำหรับดึงข้อมูลจาก Google Sheets |
+| http | 1.4.0 | HTTP client (Google Sheets + LINE push) |
+| url_launcher | 6.3.x | โทรออก `tel:` (โทรครอบครัว) [v2] |
+| image_picker | 1.1.x | เลือกรูปสมาชิกครอบครัว [v2] |
+| flutter_local_notifications | 19.4.x | แจ้งเตือนในเครื่อง (นัดหมาย/พัก) [v2] |
+| timezone | 0.10.x | timezone สำหรับตั้งเวลาแจ้งเตือน (Asia/Bangkok) [v2] |
+| camera | 0.11.x | เปิดกล้องหน้าถ่าย 1 เฟรม [v2] |
+| google_mlkit_face_detection | 0.13.x | ตรวจใบหน้า on-device (ระยะจอ/ง่วง) [v2] |
+| permission_handler | 11.3.x | ขอสิทธิ์กล้อง [v2] |
+
+> **Gradle:** เปิด core library desugaring (`desugar_jdk_libs`) — จำเป็นสำหรับ flutter_local_notifications
 
 ---
+
+## 12. ส่วนขยาย v2.0.0 (Demenish AI Additions)
+
+### 12.1 Service Layer เพิ่มเติม (`shared/services/`)
+| Service | หน้าที่ | ทำงานที่ไหน |
+|---------|--------|-------------|
+| `NotificationService` | schedule/cancel/showNow + timezone | on-device |
+| `ScamDetector` | rule-based ไทย (keyword + URL heuristic) → risk + reasons | on-device, offline |
+| `FaceSamplingService` | เปิดกล้องหน้า → 1 เฟรม → ML Kit → face ratio/eye/head → ปิด | on-device |
+| `LineService` | POST ไป Cloudflare Worker `/push` (no-op ถ้าไม่ตั้งค่า) | ต้องต่อเน็ต |
+
+### 12.2 Hive Boxes เพิ่มเติม
+| Box | เก็บ |
+|-----|------|
+| `user_profile` | โปรไฟล์ (ชื่อ/อายุ/เพศ) + รายชื่อครอบครัว (ชื่อ/เบอร์/รูป base64/lineUserId) |
+| `appointments` | รายการนัดหมาย (`items`) |
+| `flash_card` | วันที่แสดงการ์ดล่าสุด (`lastShown`) |
+| `screen_time_settings` | + keys ใหม่: `screenDistanceEnabled/IntervalMin`, `drowsyEnabled/IntervalMin` |
+
+### 12.3 Backend Layer (LINE push proxy)
+```
+Demenish AI App ──POST /push (x-app-key)──▶ Cloudflare Worker ──▶ LINE Messaging API
+ครอบครัวแอด LINE OA ──follow──▶ Worker /webhook (verify signature) ──▶ ตอบ userId
+```
+- โค้ด + คู่มือ: `docs/backend/` (cloudflare-worker.js + README.md)
+- Config ฝั่งแอปผ่าน `--dart-define=LINE_WORKER_URL=... --dart-define=LINE_APP_KEY=...`
+- ห้ามฝัง channel access token ในแอป → เก็บฝั่ง Worker เท่านั้น
+
+### 12.4 หลักการฟีเจอร์กล้อง (ข้อ 4 & 6)
+- **Interval sampling** (ไม่ใช่ stream) — เปิดกล้องแวบเดียวทุก N นาที แล้วปิด
+- **Foreground-only** — ผูกกับ `WidgetsBindingObserver` ที่ Home (parity iOS/Android + ประหยัดแบต)
+- **Opt-in** — ปิดไว้ก่อน ผู้ใช้เปิดเอง + ขอสิทธิ์กล้องผ่าน `permission_handler`
+- เกณฑ์ที่ต้องจูนบนเครื่องจริง: `kTooCloseRatio` (0.55), `kEyesClosedThreshold` (0.25)
 
 ## 10. Error Handling Strategy
 

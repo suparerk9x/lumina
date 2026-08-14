@@ -1,11 +1,12 @@
-# Lumina — แอปฝึกสมองสำหรับผู้สูงอายุ
+# Demenish AI — แอปฝึกสมองและดูแลสุขภาพสำหรับผู้สูงอายุ
 
-> คู่มือสำหรับการพัฒนา App ต่อ
+> คู่มือสำหรับการพัฒนา App ต่อ · **เวอร์ชัน 2.0.0**
+> (เดิมชื่อ Lumina — รีแบรนด์เป็น Demenish AI ใน v2.0.0)
 
 ---
 
 ## สารบัญ
-1. [Lumina คืออะไร?](#1-lumina-คืออะไร)
+1. [Demenish AI คืออะไร?](#1-demenish-ai-คืออะไร)
 2. [เทคโนโลยีที่ใช้](#2-เทคโนโลยีที่ใช้)
 3. [ติดตั้งและรันโปรเจค](#3-ติดตั้งและรันโปรเจค)
 4. [โครงสร้างโปรเจค (อธิบายทีละโฟลเดอร์)](#4-โครงสร้างโปรเจค)
@@ -18,16 +19,33 @@
 
 ---
 
-## 1. Lumina คืออะไร?
+## 1. Demenish AI คืออะไร?
 
-**Lumina** คือแอปมือถือที่สร้างมาเพื่อ**ผู้สูงอายุ** โดยเฉพาะ มีฟีเจอร์หลัก 4 อย่าง:
+**Demenish AI** คือแอปมือถือที่สร้างมาเพื่อ**ผู้สูงอายุ** โดยเฉพาะ
+
+**ฟีเจอร์เดิม (ฝึกสมอง):**
 
 | ฟีเจอร์ | ทำอะไร | ตัวอย่าง |
 |---------|-------|---------|
 | **เกมฝึกสมอง** | เล่นเกมเพื่อฝึกความจำและการคิด | จับคู่เสียง, จับคู่ภาพ, กดปุ่มตามลำดับ (3 เกม) |
-| **แบบประเมินสมอง** | ทดสอบสุขภาพสมอง 4 ขั้นตอน | ถามวัน/เวลา, จำคำ, นับถอยหลัง |
+| **แบบประเมินสมอง** | ทดสอบสุขภาพสมอง 4 ขั้นตอน (ปรับตามช่วงอายุ/เพศ) | ถามวัน/เวลา, จำคำ, นับถอยหลัง |
 | **จำกัดเวลาจอ** | ตั้งเวลาใช้มือถือไม่เกินกำหนด | ตั้ง 2 ชม./วัน แจ้งเตือนเมื่อเกิน |
 | **ตั้งค่า** | ปรับธีม/ฟอนต์/ขนาดให้อ่านง่าย | เปลี่ยนโหมดมืด, เลือกสีพื้นหลัง, เปลี่ยนฟอนต์ |
+
+**ฟีเจอร์ใหม่ใน v2.0.0 (ดูแล + ความปลอดภัย):**
+
+| ฟีเจอร์ | ทำอะไร | โฟลเดอร์ |
+|---------|-------|---------|
+| **โปรไฟล์ผู้ใช้** | ชื่อ/อายุ/เพศ + รายชื่อครอบครัว (ถามตอนเริ่มแอป) | `features/onboarding`, `features/profile` |
+| **โทรหาครอบครัว** | รูปสมาชิก กดปุ่มโทรออกทันที | `features/family_call` |
+| **นัดหมายแพทย์** | บันทึกนัด + แจ้งเตือนล่วงหน้า | `features/appointments` |
+| **Flash Card รายวัน** | pop-up การ์ดถามชื่อลูกหลาน/กระตุ้นความจำ | `features/flash_card` |
+| **ตรวจข้อความหลอกลวง** | วางข้อความ → เช็กสแกม (rule-based ไทย) | `features/scam_check` |
+| **เตือนระยะห่างหน้าจอ** | กล้องหน้าตรวจเป็นช่วง เตือนเมื่อนั่งใกล้จอ | `features/screen_distance` |
+| **ตรวจจับอาการง่วง** | ตรวจตาหลับ → เตือนพัก + แจ้งครอบครัวผ่าน LINE | `features/drowsiness` |
+
+> ฟีเจอร์กล้อง (ระยะจอ/ง่วง) เป็น **opt-in** (ปิดไว้ก่อน) ผู้ใช้เปิดเองใน Settings + ให้สิทธิ์กล้อง
+> ทำงานเฉพาะตอนเปิดแอป (foreground) — sample เป็นช่วง ประหยัดแบต + parity iOS/Android
 
 ### ทำไมตัวหนังสือต้องใหญ่?
 เพราะผู้สูงอายุมักมีปัญหาสายตา แอปนี้เลยออกแบบให้:
@@ -47,7 +65,15 @@
 | **Riverpod** | ระบบจัดการ State | ควบคุมข้อมูลที่เปลี่ยนแปลงได้ (เช่น คะแนน) |
 | **Hive** | ฐานข้อมูลในเครื่อง (NoSQL) | เก็บคะแนน/การตั้งค่าโดยไม่ต้องต่อ Internet |
 | **flutter_tts** | Text-to-Speech | อ่านออกเสียงคำภาษาไทยในเกมจับคู่เสียง |
-| **http** | HTTP client | ดึงข้อมูลเกมจาก Google Sheets |
+| **http** | HTTP client | ดึงข้อมูลเกมจาก Google Sheets + ยิง LINE push |
+| **url_launcher** | เปิด URL/tel | ปุ่มโทรหาครอบครัว (`tel:`) |
+| **image_picker** | เลือกรูป | รูปสมาชิกครอบครัว (เก็บเป็น base64) |
+| **flutter_local_notifications** + **timezone** | แจ้งเตือนในเครื่อง | เตือนนัดหมาย + เตือนพัก/ง่วง |
+| **camera** + **google_mlkit_face_detection** | กล้อง + ตรวจใบหน้า (on-device) | เตือนระยะจอ + ตรวจง่วง |
+| **permission_handler** | ขอสิทธิ์ | สิทธิ์กล้อง/แจ้งเตือน |
+
+> **Backend (ไม่บังคับ):** Cloudflare Worker เป็น proxy ส่ง LINE push — ดู `docs/backend/README.md`
+> Config ผ่าน `--dart-define=LINE_WORKER_URL=... --dart-define=LINE_APP_KEY=...` (ไม่ตั้ง = ปิดเงียบ)
 
 ### ติดตั้งสิ่งที่ต้องมีก่อน
 1. [Flutter SDK](https://flutter.dev/docs/get-started/install) (เวอร์ชัน 3.11.3+)
@@ -108,18 +134,35 @@ lumina/lib/                     <- โค้ดหลักอยู่ในน
 |   |   +- sequence/            <-    เกมเรียงลำดับ (ไม่ได้ใช้งานแล้ว)
 |   |- history/                 <-    ประวัติคะแนน
 |   |- screen_time/             <-    จำกัดเวลาหน้าจอ
-|   |- settings/                <-    ตั้งค่าธีม/ฟอนต์/ขนาด/สีพื้นหลัง
-|   +- ai_tips/                 <-    คำแนะนำสุขภาพรายวัน
+|   |- settings/                <-    ตั้งค่าธีม/ฟอนต์/ขนาด/สีพื้นหลัง + กล้อง
+|   |- ai_tips/                 <-    คำแนะนำสุขภาพรายวัน
+|   |- onboarding/              <-    หน้าเริ่มต้น ถามชื่อ/อายุ/เพศ [v2]
+|   |- profile/                 <-    โปรไฟล์ + รายชื่อครอบครัว [v2]
+|   |- family_call/             <-    โทรหาครอบครัว + แก้ไขสมาชิก [v2]
+|   |- appointments/            <-    นัดหมายแพทย์ + เตือนล่วงหน้า [v2]
+|   |- flash_card/              <-    การ์ดกระตุ้นความจำรายวัน [v2]
+|   |- scam_check/              <-    ตรวจข้อความหลอกลวง [v2]
+|   |- screen_distance/         <-    เตือนระยะห่างหน้าจอ (กล้อง) [v2]
+|   +- drowsiness/              <-    ตรวจจับอาการง่วง + แจ้ง LINE [v2]
 |
 +- shared/                      <- โค้ดที่หลายฟีเจอร์ใช้ร่วมกัน
     |- services/
-    |   +- google_sheets_service.dart <- โหลดข้อมูลเกมจาก Google Sheets [ใหม่]
+    |   |- google_sheets_service.dart <- โหลดข้อมูลเกมจาก Google Sheets
+    |   |- notification_service.dart  <- แจ้งเตือนในเครื่อง (นัดหมาย/พัก) [v2]
+    |   |- scam_detector.dart         <- ตรวจสแกม rule-based ไทย [v2]
+    |   |- face_sampling_service.dart <- ถ่าย+ตรวจใบหน้า ML Kit [v2]
+    |   +- line_service.dart          <- ส่ง LINE push ผ่าน Worker [v2]
     |- storage/                 <-    ระบบเก็บข้อมูล (Hive)
+    |   |- user_profile.dart    <-    Model โปรไฟล์ + ครอบครัว [v2]
+    |   |- appointment.dart     <-    Model นัดหมาย [v2]
+    |   +- (assessment_result, game_score, storage_service, hive_boxes)
     |- utils/                   <-    เครื่องมือช่วย (แปลงวันที่ไทย)
     +- widgets/                 <-    Widget สำเร็จรูป (ปุ่ม, Dialog, GameResultScreen)
 
 assets/images/
-    +- logo.jpg                 <-    โลโก้ Lumina (ใช้ใน Splash + AppBar)
+    |- logo.jpg                 <-    โลโก้เดิม (ไม่ใช้แล้ว)
+    |- logo.png                 <-    โลโก้ Demenish AI (Splash + Onboarding) [v2]
+    +- icon.png                 <-    ไอคอนดวงสมอง (AppBar + launcher icon) [v2]
 ```
 
 ### หลักการจัดโฟลเดอร์: Feature-First
@@ -136,9 +179,9 @@ assets/images/
 ### 5.1 เมื่อเปิดแอป (main.dart -> app.dart -> SplashScreen)
 
 ```
-1. เปิด Hive (ฐานข้อมูล) -> เปิด Box 4 กล่อง
+1. เปิด Hive (ฐานข้อมูล) -> เปิด Box ทุกกล่อง (7 กล่อง) + เตรียมระบบแจ้งเตือน
 2. สร้าง ProviderScope (ตัวจัดการ State)
-3. รัน LuminaApp (app.dart)
+3. รัน DemenishApp (app.dart)
 4. โหลด Theme (Light/Dark/System) + ฟอนต์ + สีพื้นหลังที่ตั้งไว้
 5. แสดง SplashScreen (โลโก้ + ชื่อแอป) 2 วินาที
 6. Fade transition ไป HomeScreen (หน้าหลัก)
@@ -151,15 +194,19 @@ assets/images/
 | ฝึกสมอง  |  ประเมิน  | จำกัดเวลา |  ตั้งค่า  |
 +----------+----------+----------+----------+
 ```
-แท็บ "ฝึกสมอง" จะแสดงโลโก้ Lumina ที่มุมบนซ้ายของ AppBar
+แท็บ "ฝึกสมอง" จะแสดงไอคอน Demenish AI ที่มุมบนซ้ายของ AppBar
+(หน้าหลักยังมีการ์ดฟีเจอร์ v2: โทรครอบครัว, นัดหมายแพทย์, ตรวจสแกม)
 
 ### 5.3 การเก็บข้อมูล
 แอปนี้ทำงาน**ออฟไลน์ได้** ข้อมูลทุกอย่างเก็บในเครื่องผ่าน **Hive**:
 ```
 assessment_results   -> เก็บผลประเมิน (สูงสุด 100 รายการ)
 game_scores          -> เก็บคะแนนเกม (สูงสุด 200 รายการ)
-screen_time_settings -> เก็บการตั้งค่าเวลา + ฟอนต์ + ธีม + สีพื้นหลัง
+screen_time_settings -> เก็บตั้งค่าเวลา + ฟอนต์ + ธีม + สีพื้นหลัง + กล้อง (ระยะจอ/ง่วง)
 cached_game_data     -> เก็บ cache ข้อมูลเกมจาก Google Sheets (หมดอายุ 30 นาที)
+user_profile         -> โปรไฟล์ (ชื่อ/อายุ/เพศ) + รายชื่อครอบครัว [v2]
+appointments         -> นัดหมายแพทย์ [v2]
+flash_card           -> วันที่แสดง flash card ล่าสุด [v2]
 ```
 
 ### 5.4 Google Sheets Integration
@@ -236,6 +283,10 @@ ref.read(soundMatchProvider.notifier).selectAnswer('แมว');
 | `colorSequenceProvider` | เกมกดปุ่มตามลำดับ: ลำดับสี, ด่านปัจจุบัน, เฟสของเกม (แสดง/กด/ถูก/ผิด) |
 | `screenTimeProvider` | เวลาหน้าจอ: เวลาที่ใช้, เวลาจำกัด, ประวัติสัปดาห์ |
 | `settingsProvider` | การตั้งค่า: ฟอนต์, ขนาดตัวอักษร, โหมดธีม (light/dark/system), สีพื้นหลัง (8 presets) |
+| `profileProvider` | โปรไฟล์: ชื่อ, อายุ, เพศ, รายชื่อครอบครัว [v2] |
+| `appointmentsProvider` | นัดหมายแพทย์ + ตั้ง/ยกเลิกแจ้งเตือนอัตโนมัติ [v2] |
+| `screenDistanceProvider` | เตือนระยะจอ: เปิด/ปิด, interval, timer (foreground) [v2] |
+| `drowsinessProvider` | ตรวจง่วง: เปิด/ปิด, interval, timer + แจ้ง LINE [v2] |
 
 ---
 
@@ -244,14 +295,17 @@ ref.read(soundMatchProvider.notifier).selectAnswer('แมว');
 ### Hive คืออะไร?
 Hive เป็น**ฐานข้อมูลในเครื่อง** (เหมือน SQLite แต่ง่ายกว่า) เก็บข้อมูลเป็น key-value
 
-### Hive Box ทั้งหมด 4 กล่อง
+### Hive Box ทั้งหมด 7 กล่อง
 
 | ชื่อ Box | เก็บอะไร | ตัวอย่าง key |
 |----------|---------|-------------|
 | `assessment_results` | ผลประเมินสมอง | `'results'` |
 | `game_scores` | คะแนนเกมทุกเกม | `'scores'` |
-| `screen_time_settings` | ตั้งค่าเวลา + ฟอนต์ + ธีม | `'fontScaleIndex'`, `'themeModeIndex'`, `'backgroundPresetIndex'` |
+| `screen_time_settings` | ตั้งค่าเวลา + ฟอนต์ + ธีม + กล้อง | `'themeModeIndex'`, `'screenDistanceEnabled'`, `'drowsyEnabled'` |
 | `cached_game_data` | cache ข้อมูลจาก Google Sheets | `'sound_match_csv'`, `'sequence_csv'` + timestamp |
+| `user_profile` | โปรไฟล์ + ครอบครัว [v2] | `'profile'` |
+| `appointments` | นัดหมายแพทย์ [v2] | `'items'` |
+| `flash_card` | วันที่แสดงการ์ดล่าสุด [v2] | `'lastShown'` |
 
 ชื่อ Box ทุกตัวเก็บไว้ใน `shared/storage/hive_boxes.dart` เป็น constant เพื่อป้องกันพิมพ์ผิด
 
@@ -440,7 +494,7 @@ features/settings/
 
 **ไฟล์:** `features/splash/splash_screen.dart`
 
-- แสดงโลโก้ (`assets/images/logo.jpg`) + ชื่อ "Lumina" + tagline
+- แสดงโลโก้ (`assets/images/logo.png`) + tagline (ครั้งแรกไป Onboarding, ครั้งต่อไปไปหน้าหลัก)
 - Fade-in animation 0.8 วินาที
 - รอ 2 วินาที แล้ว fade transition ไปหน้าหลัก
 - รองรับโหมดมืด (เปลี่ยนสีพื้นหลัง)

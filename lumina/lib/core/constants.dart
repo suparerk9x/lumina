@@ -5,7 +5,7 @@
 class AppConstants {
   // ชื่อและเวอร์ชันของแอป
   static const String appName = 'Demenish AI';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '2.0.0';
 
   // ─── Word Pool (Memory Game — 30 Thai words) ────────────
   /// คลังคำศัพท์ภาษาไทย 30 คำ สำหรับใช้ในเกมฝึกความจำ
