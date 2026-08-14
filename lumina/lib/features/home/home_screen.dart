@@ -10,6 +10,7 @@ import '../games/memory_match/memory_match_game.dart';
 import '../games/sound_match/sound_match_game.dart';
 import '../ai_tips/tips_widget.dart';
 import '../appointments/appointments_screen.dart';
+import '../drowsiness/drowsiness_provider.dart';
 import '../family_call/family_call_screen.dart';
 import '../flash_card/flash_card_dialog.dart';
 import '../flash_card/flash_card_service.dart';
@@ -40,9 +41,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // แสดง flash card รายวัน ครั้งแรกที่เข้าแอปของวันนั้น (ข้อ 8)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeShowFlashCard();
-      // เริ่มตรวจระยะห่างหน้าจอถ้าเปิดไว้ (ข้อ 4) — foreground เท่านั้น
-      ref.read(screenDistanceProvider.notifier).setForeground(true);
+      // เริ่มตรวจกล้อง (ระยะจอ ข้อ 4 / ง่วง ข้อ 6) ถ้าเปิดไว้ — foreground เท่านั้น
+      _setMonitorsForeground(true);
     });
+  }
+
+  void _setMonitorsForeground(bool value) {
+    ref.read(screenDistanceProvider.notifier).setForeground(value);
+    ref.read(drowsinessProvider.notifier).setForeground(value);
   }
 
   @override
@@ -54,20 +60,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // ตรวจกล้องเฉพาะตอนแอปเปิดอยู่ (ข้อ 4/6 — parity iOS/Android)
-    final isForeground = state == AppLifecycleState.resumed;
-    ref.read(screenDistanceProvider.notifier).setForeground(isForeground);
+    _setMonitorsForeground(state == AppLifecycleState.resumed);
   }
 
-  void _showTooCloseWarning() {
+  void _showWarning(String text, Color color) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
-        content: const Text(
-          'นั่งใกล้จอเกินไป ถอยห่างอีกนิดนะ เพื่อถนอมสายตา',
-          style: TextStyle(fontSize: 18),
-        ),
-        backgroundColor: AppTheme.warning,
+        content: Text(text, style: const TextStyle(fontSize: 18)),
+        backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 5),
         shape:
@@ -100,7 +102,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // เตือนเมื่อ monitor ตรวจพบว่านั่งใกล้จอเกินไป (ข้อ 4)
     ref.listen<ScreenDistanceState>(screenDistanceProvider, (prev, next) {
       if (prev != null && next.warningSeq > prev.warningSeq) {
-        _showTooCloseWarning();
+        _showWarning(
+            'นั่งใกล้จอเกินไป ถอยห่างอีกนิดนะ เพื่อถนอมสายตา', AppTheme.warning);
+      }
+    });
+    // เตือนเมื่อตรวจพบอาการง่วง (ข้อ 6)
+    ref.listen<DrowsinessState>(drowsinessProvider, (prev, next) {
+      if (prev != null && next.warningSeq > prev.warningSeq) {
+        _showWarning('ดูเหมือนกำลังง่วง พักสายตาสักครู่นะ', AppTheme.primary);
       }
     });
 

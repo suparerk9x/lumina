@@ -22,6 +22,7 @@ class ContactEditor extends StatefulWidget {
 class _ContactEditorState extends State<ContactEditor> {
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
+  late final TextEditingController _lineController;
   String? _photoBase64;
 
   @override
@@ -29,6 +30,8 @@ class _ContactEditorState extends State<ContactEditor> {
     super.initState();
     _nameController = TextEditingController(text: widget.existing?.name ?? '');
     _phoneController = TextEditingController(text: widget.existing?.phone ?? '');
+    _lineController =
+        TextEditingController(text: widget.existing?.lineUserId ?? '');
     _photoBase64 = widget.existing?.photoBase64;
   }
 
@@ -36,6 +39,7 @@ class _ContactEditorState extends State<ContactEditor> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _lineController.dispose();
     super.dispose();
   }
 
@@ -69,12 +73,13 @@ class _ContactEditorState extends State<ContactEditor> {
       );
       return;
     }
+    final line = _lineController.text.trim();
     Navigator.of(context).pop(
       FamilyContact(
         name: name,
         phone: phone,
         photoBase64: _photoBase64,
-        lineUserId: widget.existing?.lineUserId,
+        lineUserId: line.isEmpty ? null : line,
       ),
     );
   }
@@ -143,6 +148,28 @@ class _ContactEditorState extends State<ContactEditor> {
             decoration: const InputDecoration(
               hintText: 'เช่น 0812345678',
               prefixIcon: Icon(Icons.phone_rounded),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('LINE User ID (ไม่บังคับ)',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'สำหรับส่งแจ้งเตือนอาการง่วงไปหาคนนี้ผ่าน LINE',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppTheme.darkTextSecondary
+                  : AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _lineController,
+            style: const TextStyle(fontSize: 18),
+            decoration: const InputDecoration(
+              hintText: 'Uxxxxxxxx… (ได้จากการแอด LINE OA)',
+              prefixIcon: Icon(Icons.chat_rounded),
             ),
           ),
           const SizedBox(height: 32),

@@ -5,6 +5,8 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/storage_service.dart';
 import '../../shared/storage/user_profile.dart';
+import '../../shared/services/line_service.dart';
+import '../drowsiness/drowsiness_provider.dart';
 import '../profile/profile_provider.dart';
 import '../profile/profile_screen.dart';
 import '../screen_distance/screen_distance_provider.dart';
@@ -31,6 +33,10 @@ class SettingsScreen extends ConsumerWidget {
 
           // ─── เตือนระยะห่างหน้าจอ (ใช้กล้อง) ──────────
           _ScreenDistanceSection(),
+          const SizedBox(height: 20),
+
+          // ─── ตรวจจับอาการง่วง (ใช้กล้อง + แจ้ง LINE) ──────────
+          _DrowsinessSection(),
           const SizedBox(height: 20),
 
           // ─── ส่วนเลือกโหมดธีม (สว่าง/มืด/ตามระบบ) ──────────
@@ -344,6 +350,99 @@ class _ScreenDistanceSection extends ConsumerWidget {
                   icon: const Icon(Icons.camera_alt_rounded),
                   label: const Text('ทดสอบตอนนี้'),
                 ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ตรวจจับอาการง่วง (Drowsiness) — ใช้กล้องหน้า + แจ้งครอบครัวผ่าน LINE
+// ═══════════════════════════════════════════════════════════════
+
+class _DrowsinessSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(drowsinessProvider);
+    final notifier = ref.read(drowsinessProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppTheme.darkPrimary : AppTheme.primary;
+    final secondary =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+    final lineReady = LineService().isConfigured;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primary.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.bedtime_rounded, color: primary, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('ตรวจจับอาการง่วง',
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+                Switch(
+                  value: state.enabled,
+                  onChanged: (v) => notifier.setEnabled(v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'ใช้กล้องหน้าตรวจเป็นช่วง เฉพาะตอนเปิดแอป '
+              'ถ้าพบว่ากำลังง่วง จะเตือนให้พัก และแจ้งครอบครัวผ่าน LINE',
+              style: TextStyle(fontSize: 15, color: secondary),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  lineReady
+                      ? Icons.check_circle_rounded
+                      : Icons.info_outline_rounded,
+                  size: 18,
+                  color: lineReady ? AppTheme.success : secondary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    lineReady
+                        ? 'LINE: พร้อมส่งแจ้งเตือน'
+                        : 'LINE: ยังไม่ได้ตั้งค่า (ดู docs/backend)',
+                    style: TextStyle(fontSize: 14, color: secondary),
+                  ),
+                ),
+              ],
+            ),
+            if (state.enabled) ...[
+              const SizedBox(height: 16),
+              Text('ตรวจทุก', style: TextStyle(fontSize: 15, color: secondary)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: kDrowsyIntervals.map((m) {
+                  return ChoiceChip(
+                    label: Text('$m นาที', style: const TextStyle(fontSize: 16)),
+                    selected: state.intervalMinutes == m,
+                    onSelected: (_) => notifier.setInterval(m),
+                  );
+                }).toList(),
               ),
             ],
           ],

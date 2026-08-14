@@ -33,6 +33,18 @@ class NotificationService {
     iOS: DarwinNotificationDetails(),
   );
 
+  /// ช่องแจ้งเตือนทั่วไป (เช่น เตือนพักสายตา/ง่วง — ข้อ 6)
+  static const NotificationDetails _alertDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'alerts',
+      'การแจ้งเตือนสุขภาพ',
+      channelDescription: 'เตือนพักสายตา/พักผ่อนเมื่อพบสัญญาณเหนื่อยล้า',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(),
+  );
+
   /// เริ่มต้นระบบแจ้งเตือน (เรียกครั้งเดียวตอนเปิดแอปใน main)
   Future<void> init() async {
     if (_initialized) return;
@@ -108,6 +120,20 @@ class NotificationService {
       );
     } catch (e, s) {
       _log('schedule', e, s);
+    }
+  }
+
+  /// แสดงการแจ้งเตือนทันที (ไม่ตั้งเวลา) — ใช้เตือนพักสายตา/ง่วง
+  Future<void> showNow({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await init();
+      await _plugin.show(id, title, body, _alertDetails);
+    } catch (e, s) {
+      _log('showNow', e, s);
     }
   }
 
