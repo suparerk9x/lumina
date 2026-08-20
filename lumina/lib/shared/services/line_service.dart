@@ -27,6 +27,16 @@ class LineService {
     defaultValue: '',
   );
 
+  /// LINE OA basic ID (ขึ้นต้นด้วย @) สำหรับให้ครอบครัวสแกน QR แอดเป็นเพื่อน
+  static const String oaBasicId = String.fromEnvironment(
+    'LINE_OA_ID',
+    defaultValue: '@764txpcs',
+  );
+
+  /// ลิงก์แอด OA เป็นเพื่อน (ใช้ทำ QR)
+  String get addFriendUrl =>
+      'https://line.me/R/ti/p/${Uri.encodeComponent(oaBasicId)}';
+
   bool get isConfigured => workerBaseUrl.isNotEmpty && appKey.isNotEmpty;
 
   /// ส่งข้อความหา 1 LINE userId
@@ -51,7 +61,31 @@ class LineService {
     }
   }
 
+  /// ส่งแบบ broadcast หาทุกคนที่แอด OA (เฟส 0 pilot — OA 1 ตัว = 1 ครอบครัว)
+  /// ข้อดี: ครอบครัวแค่แอด OA ไม่ต้องผูก userId. คืน true ถ้าส่งสำเร็จ
+  Future<bool> broadcast(String message) async {
+    if (!isConfigured) return false;
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$workerBaseUrl/broadcast'),
+            headers: {
+              'content-type': 'application/json',
+              'x-app-key': appKey,
+            },
+            body: jsonEncode({'message': message}),
+          )
+          .timeout(const Duration(seconds: 10));
+      return resp.statusCode >= 200 && resp.statusCode < 300;
+    } catch (e, s) {
+      developer.log('LineService.broadcast failed: $e',
+          name: 'DemenishAI', error: e, stackTrace: s);
+      return false;
+    }
+  }
+
   /// ส่งข้อความหาสมาชิกครอบครัวทุกคนที่ผูก LINE ไว้ (มี lineUserId)
+  /// (ใช้ตอน multi-tenant — เฟส 0 ใช้ broadcast แทน)
   Future<int> notifyFamily(String message) async {
     if (!isConfigured) return 0;
     final contacts = StorageService()

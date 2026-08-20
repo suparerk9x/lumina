@@ -135,8 +135,9 @@ class DrowsinessNotifier extends Notifier<DrowsinessState> {
 
     final name = StorageService().getUserProfile().name;
     final who = name.isNotEmpty ? name : 'คนที่บ้าน';
+    // เฟส 0: broadcast หาทุกคนที่แอด OA (multi-tenant จะเปลี่ยนเป็น push ต่อบ้าน)
     await LineService()
-        .notifyFamily('$who ดูเหมือนกำลังง่วง/เหนื่อยล้า ลองโทรถามอาการหน่อยนะ');
+        .broadcast('$who ดูเหมือนกำลังง่วง/เหนื่อยล้า ลองโทรถามอาการหน่อยนะ');
   }
 }
 

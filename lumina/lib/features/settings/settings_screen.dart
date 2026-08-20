@@ -7,6 +7,7 @@ import '../../shared/storage/storage_service.dart';
 import '../../shared/storage/user_profile.dart';
 import '../../shared/services/line_service.dart';
 import '../drowsiness/drowsiness_provider.dart';
+import '../family_line/family_line_screen.dart';
 import '../profile/profile_provider.dart';
 import '../profile/profile_screen.dart';
 import '../screen_distance/screen_distance_provider.dart';
@@ -37,6 +38,28 @@ class SettingsScreen extends ConsumerWidget {
 
           // ─── ตรวจจับอาการง่วง (ใช้กล้อง + แจ้ง LINE) ──────────
           _DrowsinessSection(),
+          const SizedBox(height: 12),
+
+          // ─── เชื่อม LINE ครอบครัว (QR แอด OA) ──────────
+          Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              leading: const Icon(Icons.qr_code_2_rounded,
+                  color: Color(0xFF06C755), size: 30),
+              title: const Text('แจ้งครอบครัวผ่าน LINE',
+                  style: TextStyle(fontSize: 18)),
+              subtitle: const Text('ให้ลูกหลานสแกน QR แอดเพื่อรับแจ้งเตือน',
+                  style: TextStyle(fontSize: 14)),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const FamilyLineScreen()),
+                );
+              },
+            ),
+          ),
           const SizedBox(height: 20),
 
           // ─── ส่วนเลือกโหมดธีม (สว่าง/มืด/ตามระบบ) ──────────

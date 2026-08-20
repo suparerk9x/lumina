@@ -1,0 +1,8 @@
+name = "demenish-line"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# KV เก็บ userId ผู้ติดตาม LINE OA (id เติมโดยสคริปต์ deploy)
+[[kv_namespaces]]
+binding = "USERS"
+id = "74f87a36bbe64796b73af7fcdb9295ca"
