@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants.dart';
@@ -37,6 +38,14 @@ class DemenishApp extends ConsumerWidget {
       ),
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
+      // 2 ภาษา (EN default, เลือก TH ได้)
+      locale: Locale(settings.localeCode),
+      supportedLocales: const [Locale('en'), Locale('th')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const SplashScreen(),
     );
   }

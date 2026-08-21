@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/user_profile.dart';
 import '../home/home_screen.dart';
@@ -68,13 +69,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'ยินดีต้อนรับสู่ Demenish AI',
+              tr('onboarding.welcome'),
               style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'บอกเราหน่อยเพื่อปรับแอปให้เหมาะกับคุณ\n(ข้ามได้ แล้วมาตั้งทีหลังที่หน้าตั้งค่า)',
+              tr('onboarding.subtitle'),
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge
@@ -84,22 +85,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(height: 32),
 
             // ── ชื่อ ──
-            Text('ชื่อของคุณ',
+            Text(tr('onboarding.name'),
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             TextField(
               controller: _nameController,
               textInputAction: TextInputAction.done,
               style: const TextStyle(fontSize: 20),
-              decoration: const InputDecoration(
-                hintText: 'เช่น สมชาย',
-                prefixIcon: Icon(Icons.person_rounded),
+              decoration: InputDecoration(
+                hintText: tr('onboarding.nameHint'),
+                prefixIcon: const Icon(Icons.person_rounded),
               ),
             ),
             const SizedBox(height: 28),
 
             // ── ช่วงอายุ ──
-            Text('ช่วงอายุ',
+            Text(tr('onboarding.age'),
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             _AgeRangeSelector(
@@ -109,7 +110,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(height: 28),
 
             // ── เพศ ──
-            Text('เพศ', style: Theme.of(context).textTheme.titleMedium),
+            Text(tr('onboarding.gender'),
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             _GenderSelector(
               selected: _gender,
@@ -121,7 +123,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               height: 56,
               child: ElevatedButton(
                 onPressed: _start,
-                child: const Text('เริ่มใช้งาน'),
+                child: Text(tr('onboarding.start')),
               ),
             ),
             const SizedBox(height: 12),
@@ -130,7 +132,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: TextButton(
                 onPressed: _skip,
                 child: Text(
-                  'ข้ามไปก่อน',
+                  tr('onboarding.skip'),
                   style: TextStyle(fontSize: 18, color: secondaryText),
                 ),
               ),

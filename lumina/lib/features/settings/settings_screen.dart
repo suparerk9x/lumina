@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants.dart';
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/storage_service.dart';
 import '../../shared/storage/user_profile.dart';
@@ -24,10 +25,14 @@ class SettingsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ตั้งค่า')),
+      appBar: AppBar(title: Text(tr('settings.title'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // ─── ภาษา (Language) ──────────
+          _LanguageSection(),
+          const SizedBox(height: 20),
+
           // ─── ข้อมูลของฉัน (ชื่อ/อายุ/เพศ/ครอบครัว) ──────────
           _ProfileTile(),
           const SizedBox(height: 20),
@@ -48,10 +53,10 @@ class SettingsScreen extends ConsumerWidget {
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               leading: const Icon(Icons.qr_code_2_rounded,
                   color: Color(0xFF06C755), size: 30),
-              title: const Text('แจ้งครอบครัวผ่าน LINE',
-                  style: TextStyle(fontSize: 18)),
-              subtitle: const Text('ให้ลูกหลานสแกน QR แอดเพื่อรับแจ้งเตือน',
-                  style: TextStyle(fontSize: 14)),
+              title: Text(tr('settings.familyLine'),
+                  style: const TextStyle(fontSize: 18)),
+              subtitle: Text(tr('settings.familyLineHint'),
+                  style: const TextStyle(fontSize: 14)),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
@@ -240,6 +245,64 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ภาษา (Language) — EN default / TH
+// ═══════════════════════════════════════════════════════════════
+
+class _LanguageSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final code = ref.watch(settingsProvider).localeCode;
+    final notifier = ref.read(settingsProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppTheme.darkPrimary : AppTheme.primary;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primary.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.language_rounded, color: primary, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Text(tr('lang.title'),
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                ChoiceChip(
+                  label: Text(tr('lang.en'), style: const TextStyle(fontSize: 16)),
+                  selected: code == 'en',
+                  onSelected: (_) => notifier.setLocale('en'),
+                ),
+                ChoiceChip(
+                  label: Text(tr('lang.th'), style: const TextStyle(fontSize: 16)),
+                  selected: code == 'th',
+                  onSelected: (_) => notifier.setLocale('th'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ข้อมูลของฉัน (Profile) — ชื่อ/อายุ/เพศ/ครอบครัว
 // ═══════════════════════════════════════════════════════════════
 
@@ -256,7 +319,7 @@ class _ProfileTile extends ConsumerWidget {
     if (profile.ageRange != null) parts.add(profile.ageRange!.label);
     if (profile.gender != Gender.unspecified) parts.add(profile.gender.label);
     final subtitle =
-        parts.isEmpty ? 'แตะเพื่อตั้งชื่อ อายุ และเพศ' : parts.join(' · ');
+        parts.isEmpty ? tr('settings.myInfoHint') : parts.join(' · ');
 
     return Card(
       margin: EdgeInsets.zero,
@@ -269,7 +332,7 @@ class _ProfileTile extends ConsumerWidget {
           child: Icon(Icons.person_rounded, color: primary, size: 28),
         ),
         title: Text(
-          profile.name.isEmpty ? 'ข้อมูลของฉัน' : profile.name,
+          profile.name.isEmpty ? tr('settings.myInfo') : profile.name,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         subtitle: Padding(
@@ -322,7 +385,7 @@ class _ScreenDistanceSection extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('เตือนระยะห่างหน้าจอ',
+                  child: Text(tr('sd.title'),
                       style: Theme.of(context).textTheme.titleMedium),
                 ),
                 Switch(
@@ -333,13 +396,13 @@ class _ScreenDistanceSection extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'ใช้กล้องหน้าตรวจเป็นช่วง เฉพาะตอนเปิดแอป '
-              'ถ้านั่งใกล้จอเกินไปจะเตือนให้ถอยห่าง',
+              tr('sd.desc'),
               style: TextStyle(fontSize: 15, color: secondary),
             ),
             if (state.enabled) ...[
               const SizedBox(height: 16),
-              Text('ตรวจทุก', style: TextStyle(fontSize: 15, color: secondary)),
+              Text(tr('sd.every'),
+                  style: TextStyle(fontSize: 15, color: secondary)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
@@ -347,7 +410,8 @@ class _ScreenDistanceSection extends ConsumerWidget {
                 children: kDistanceIntervals.map((m) {
                   final selected = state.intervalMinutes == m;
                   return ChoiceChip(
-                    label: Text('$m นาที', style: const TextStyle(fontSize: 16)),
+                    label: Text(trp('common.minutes', {'n': '$m'}),
+                        style: const TextStyle(fontSize: 16)),
                     selected: selected,
                     onSelected: (_) => notifier.setInterval(m),
                   );
@@ -362,16 +426,14 @@ class _ScreenDistanceSection extends ConsumerWidget {
                     final tooClose = await notifier.checkNow();
                     if (!context.mounted) return;
                     final msg = tooClose == null
-                        ? 'ไม่พบใบหน้า ลองมองที่กล้องแล้วลองใหม่'
-                        : (tooClose
-                            ? 'นั่งใกล้เกินไป ถอยห่างอีกนิดนะ'
-                            : 'ระยะห่างกำลังดี 👍');
+                        ? tr('sd.noFace')
+                        : (tooClose ? tr('sd.tooClose') : tr('sd.good'));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(msg)),
                     );
                   },
                   icon: const Icon(Icons.camera_alt_rounded),
-                  label: const Text('ทดสอบตอนนี้'),
+                  label: Text(tr('common.test')),
                 ),
               ),
             ],
@@ -416,7 +478,7 @@ class _DrowsinessSection extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('ตรวจจับอาการง่วง',
+                  child: Text(tr('drowsy.title'),
                       style: Theme.of(context).textTheme.titleMedium),
                 ),
                 Switch(
@@ -427,8 +489,7 @@ class _DrowsinessSection extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'ใช้กล้องหน้าตรวจเป็นช่วง เฉพาะตอนเปิดแอป '
-              'ถ้าพบว่ากำลังง่วง จะเตือนให้พัก และแจ้งครอบครัวผ่าน LINE',
+              tr('drowsy.desc'),
               style: TextStyle(fontSize: 15, color: secondary),
             ),
             const SizedBox(height: 8),
@@ -444,9 +505,7 @@ class _DrowsinessSection extends ConsumerWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    lineReady
-                        ? 'LINE: พร้อมส่งแจ้งเตือน'
-                        : 'LINE: ยังไม่ได้ตั้งค่า (ดู docs/backend)',
+                    lineReady ? tr('drowsy.lineReady') : tr('drowsy.lineNotReady'),
                     style: TextStyle(fontSize: 14, color: secondary),
                   ),
                 ),
@@ -454,14 +513,16 @@ class _DrowsinessSection extends ConsumerWidget {
             ),
             if (state.enabled) ...[
               const SizedBox(height: 16),
-              Text('ตรวจทุก', style: TextStyle(fontSize: 15, color: secondary)),
+              Text(tr('sd.every'),
+                  style: TextStyle(fontSize: 15, color: secondary)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: kDrowsyIntervals.map((m) {
                   return ChoiceChip(
-                    label: Text('$m นาที', style: const TextStyle(fontSize: 16)),
+                    label: Text(trp('common.minutes', {'n': '$m'}),
+                        style: const TextStyle(fontSize: 16)),
                     selected: state.intervalMinutes == m,
                     onSelected: (_) => notifier.setInterval(m),
                   );

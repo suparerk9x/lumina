@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/utils/thai_date.dart';
 import '../assessment/assessment_screen.dart';
@@ -102,14 +103,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // เตือนเมื่อ monitor ตรวจพบว่านั่งใกล้จอเกินไป (ข้อ 4)
     ref.listen<ScreenDistanceState>(screenDistanceProvider, (prev, next) {
       if (prev != null && next.warningSeq > prev.warningSeq) {
-        _showWarning(
-            'นั่งใกล้จอเกินไป ถอยห่างอีกนิดนะ เพื่อถนอมสายตา', AppTheme.warning);
+        _showWarning(tr('sd.warn'), AppTheme.warning);
       }
     });
     // เตือนเมื่อตรวจพบอาการง่วง (ข้อ 6)
     ref.listen<DrowsinessState>(drowsinessProvider, (prev, next) {
       if (prev != null && next.warningSeq > prev.warningSeq) {
-        _showWarning('ดูเหมือนกำลังง่วง พักสายตาสักครู่นะ', AppTheme.primary);
+        _showWarning(tr('drowsy.warn'), AppTheme.primary);
       }
     });
 
@@ -139,26 +139,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           iconSize: 32,
           selectedFontSize: 16,
           unselectedFontSize: 16,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.psychology_outlined),
-              activeIcon: Icon(Icons.psychology),
-              label: 'ฝึกสมอง',
+              icon: const Icon(Icons.psychology_outlined),
+              activeIcon: const Icon(Icons.psychology),
+              label: tr('nav.games'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined),
-              activeIcon: Icon(Icons.assignment),
-              label: 'ประเมิน',
+              icon: const Icon(Icons.assignment_outlined),
+              activeIcon: const Icon(Icons.assignment),
+              label: tr('nav.assessment'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.phone_android_outlined),
-              activeIcon: Icon(Icons.phone_android),
-              label: 'จำกัดเวลา',
+              icon: const Icon(Icons.phone_android_outlined),
+              activeIcon: const Icon(Icons.phone_android),
+              label: tr('nav.screenTime'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'ตั้งค่า',
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: tr('nav.settings'),
             ),
           ],
         ),
@@ -206,12 +206,12 @@ class _GreetingCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'สวัสดี!',
+                        tr('home.hello'),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'วันนี้เป็นอย่างไรบ้าง?',
+                        tr('home.howAreYou'),
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: isDark
                                   ? AppTheme.darkTextSecondary
@@ -267,11 +267,11 @@ class _GamesTab extends StatelessWidget {
             ),
           ),
         ),
-        title: const Text('ฝึกสมอง'),
+        title: Text(tr('home.appbar')),
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded),
-            tooltip: 'ประวัติคะแนน',
+            tooltip: tr('home.historyTooltip'),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -289,8 +289,8 @@ class _GamesTab extends StatelessWidget {
           const SizedBox(height: 8),
           _GameCard(
             icon: Icons.phone_in_talk_rounded,
-            title: 'โทรหาครอบครัว',
-            subtitle: 'กดโทรหาลูกหลานได้ทันที',
+            title: tr('home.familyCall.title'),
+            subtitle: tr('home.familyCall.subtitle'),
             color: const Color(0xFFE3F2FD),
             iconColor: Colors.blue,
             onTap: () {
@@ -303,8 +303,8 @@ class _GamesTab extends StatelessWidget {
           ),
           _GameCard(
             icon: Icons.event_available_rounded,
-            title: 'นัดหมายแพทย์',
-            subtitle: 'บันทึกนัด แล้วเตือนก่อนถึงเวลา',
+            title: tr('home.appointment.title'),
+            subtitle: tr('home.appointment.subtitle'),
             color: const Color(0xFFFCE4EC),
             iconColor: const Color(0xFFD81B60),
             onTap: () {
@@ -317,8 +317,8 @@ class _GamesTab extends StatelessWidget {
           ),
           _GameCard(
             icon: Icons.shield_rounded,
-            title: 'ตรวจข้อความหลอกลวง',
-            subtitle: 'วางข้อความ SMS มาเช็กว่าปลอดภัยไหม',
+            title: tr('home.scam.title'),
+            subtitle: tr('home.scam.subtitle'),
             color: const Color(0xFFFFF3E0),
             iconColor: const Color(0xFFEF6C00),
             onTap: () {
@@ -331,8 +331,8 @@ class _GamesTab extends StatelessWidget {
           ),
           _GameCard(
             icon: Icons.music_note_rounded,
-            title: 'จับคู่เสียง',
-            subtitle: 'ฝึกความจำด้านการฟัง',
+            title: tr('home.soundMatch.title'),
+            subtitle: tr('home.soundMatch.subtitle'),
             color: const Color(0xFFE0F2F1),
             iconColor: AppTheme.primary,
             onTap: () {
@@ -345,8 +345,8 @@ class _GamesTab extends StatelessWidget {
           ),
           _GameCard(
             icon: Icons.grid_view_rounded,
-            title: 'จับคู่ภาพ',
-            subtitle: 'ฝึกความจำด้านภาพ',
+            title: tr('home.memoryMatch.title'),
+            subtitle: tr('home.memoryMatch.subtitle'),
             color: const Color(0xFFE8F5E9),
             iconColor: AppTheme.success,
             onTap: () {
@@ -359,8 +359,8 @@ class _GamesTab extends StatelessWidget {
           ),
           _GameCard(
             icon: Icons.gamepad_rounded,
-            title: 'กดปุ่มตามลำดับ',
-            subtitle: 'ฝึกความจำและการสังเกต',
+            title: tr('home.colorSequence.title'),
+            subtitle: tr('home.colorSequence.subtitle'),
             color: const Color(0xFFFFF3E0),
             iconColor: AppTheme.warning,
             onTap: () {
@@ -461,7 +461,7 @@ class _AssessmentTab extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ประเมินสุขภาพสมอง')),
+      appBar: AppBar(title: Text(tr('assessment.tab.title'))),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -476,13 +476,13 @@ class _AssessmentTab extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'พร้อมประเมินหรือยัง?',
+                tr('assessment.tab.ready'),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'ทำแบบประเมินเพื่อดูสุขภาพสมองของคุณ',
+                tr('assessment.tab.desc'),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: isDark
                           ? AppTheme.darkTextSecondary
@@ -500,7 +500,7 @@ class _AssessmentTab extends ConsumerWidget {
                     ),
                   );
                 },
-                child: const Text('เริ่มประเมิน'),
+                child: Text(tr('assessment.tab.start')),
               ),
             ],
           ),

@@ -2,27 +2,33 @@
 // ใช้เก็บ ชื่อ / ช่วงอายุ / เพศ เพื่อปรับแบบประเมินให้เหมาะสม (ข้อ 5)
 // และเก็บรายชื่อครอบครัวสำหรับปุ่มโทรด่วน (ข้อ 2) + แจ้ง LINE (ข้อ 6)
 
+import '../../core/strings.dart';
+
 /// ช่วงอายุของผู้ใช้ ใช้ปรับความยากของแบบประเมิน
 enum AgeRange {
-  below60('ต่ำกว่า 60 ปี'),
-  age60to69('60–69 ปี'),
-  age70to79('70–79 ปี'),
-  age80plus('80 ปีขึ้นไป');
+  below60('age.below60'),
+  age60to69('age.60to69'),
+  age70to79('age.70to79'),
+  age80plus('age.80plus');
 
-  const AgeRange(this.label);
+  const AgeRange(this.labelKey);
 
-  final String label;
+  final String labelKey;
+
+  String get label => tr(labelKey);
 }
 
 /// เพศของผู้ใช้ (ปรับได้ที่ตั้งค่า)
 enum Gender {
-  male('ชาย'),
-  female('หญิง'),
-  unspecified('ไม่ระบุ');
+  male('gender.male'),
+  female('gender.female'),
+  unspecified('gender.unspecified');
 
-  const Gender(this.label);
+  const Gender(this.labelKey);
 
-  final String label;
+  final String labelKey;
+
+  String get label => tr(labelKey);
 }
 
 /// โมเดลสมาชิกครอบครัว 1 คน (สำหรับปุ่มโทร + แจ้ง LINE)
