@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/storage_service.dart';
 import '../home/home_screen.dart';
@@ -82,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'A Brain Tracker App',
+                tr('splash.tagline'),
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white.withAlpha(200),

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../assessment_state.dart';
 
@@ -117,13 +118,13 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
             ),
             const SizedBox(height: 28),
             Text(
-              'ทดสอบความจำ',
+              tr('assess.memorizeReadyTitle'),
               style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'จะแสดงคำ 3 คำ ให้เวลาจำ $_totalSeconds วินาที\nหลังจากนั้นจะถามอีกครั้ง',
+              trp('assess.memorizeReadyBody', {'seconds': '$_totalSeconds'}),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -133,7 +134,7 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
             ElevatedButton.icon(
               onPressed: _startTimer,
               icon: const Icon(Icons.play_arrow_rounded, size: 28),
-              label: const Text('พร้อมแล้ว เริ่มเลย!'),
+              label: Text(tr('assess.readyStartButton')),
             ),
           ],
         ),
@@ -182,7 +183,7 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
                       child: Text('$_secondsLeft'),
                     ),
                     Text(
-                      'วินาที',
+                      tr('assess.secondsLabel'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondary,
                           ),
@@ -194,7 +195,7 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
           ),
           const SizedBox(height: 8),
           Text(
-            'จำคำเหล่านี้ให้ได้',
+            tr('assess.memorizeTheseWords'),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
@@ -297,7 +298,7 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
                         color: AppTheme.error, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'ใกล้หมดเวลาแล้ว!',
+                      tr('assess.almostOutOfTime'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.error,
                             fontWeight: FontWeight.w600,
@@ -336,13 +337,13 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
             ),
             const SizedBox(height: 24),
             Text(
-              'หมดเวลา!',
+              tr('assess.timeUpTitle'),
               style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'เราจะถามคำเหล่านี้อีกครั้งทีหลัง\nไปทำข้อต่อไปกันเลย',
+              tr('assess.timeUpBody'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -354,7 +355,7 @@ class _StepMemorizeState extends ConsumerState<StepMemorize>
                 ref.read(assessmentProvider.notifier).nextStep();
               },
               icon: const Icon(Icons.arrow_forward_rounded),
-              label: const Text('ไปข้อถัดไป'),
+              label: Text(tr('assess.nextQuestion')),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/strings.dart';
 import '../../../shared/services/google_sheets_service.dart';
 import '../../../shared/storage/game_score.dart';
 import '../../../shared/storage/storage_service.dart';
@@ -13,15 +14,17 @@ import '../sound_match/word_emoji_map.dart';
 
 /// ระดับความยากของเกม
 enum MemoryDifficulty {
-  easy(4, 'ง่าย', '8 การ์ด'),
-  medium(6, 'ปานกลาง', '12 การ์ด'),
-  hard(8, 'ยาก', '16 การ์ด');
+  easy(4, 'game.memoryMatch.easy'),
+  medium(6, 'game.memoryMatch.medium'),
+  hard(8, 'game.memoryMatch.hard');
 
-  const MemoryDifficulty(this.pairs, this.label, this.subtitle);
+  const MemoryDifficulty(this.pairs, this.labelKey);
 
   final int pairs; // จำนวนคู่
-  final String label;
-  final String subtitle;
+  final String labelKey;
+
+  String get label => tr(labelKey);
+  String get subtitle => trp('game.memoryMatch.cardCount', {'n': '${pairs * 2}'});
 
   /// จำนวน column ของ grid ตามความยาก
   int get columns => pairs <= 4 ? 2 : pairs <= 6 ? 3 : 4;

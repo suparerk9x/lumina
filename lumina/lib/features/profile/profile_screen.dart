@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/user_profile.dart';
 import '../family_call/family_call_screen.dart';
@@ -37,24 +38,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final notifier = ref.read(profileProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ข้อมูลของฉัน')),
+      appBar: AppBar(title: Text(tr('profile.title'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           _SectionCard(
             icon: Icons.badge_rounded,
-            title: 'ชื่อ',
+            title: tr('profile.name'),
             child: TextField(
               controller: _nameController,
               style: const TextStyle(fontSize: 20),
-              decoration: const InputDecoration(hintText: 'ชื่อของคุณ'),
+              decoration: InputDecoration(hintText: tr('profile.nameHint')),
               onChanged: (v) => notifier.setName(v),
             ),
           ),
           const SizedBox(height: 16),
           _SectionCard(
             icon: Icons.cake_rounded,
-            title: 'ช่วงอายุ',
+            title: tr('profile.ageRange'),
             child: Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -70,7 +71,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 16),
           _SectionCard(
             icon: Icons.wc_rounded,
-            title: 'เพศ',
+            title: tr('profile.gender'),
             child: Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -91,9 +92,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               leading: const Icon(Icons.groups_rounded,
                   color: AppTheme.primary, size: 28),
-              title: const Text('รายชื่อครอบครัว',
-                  style: TextStyle(fontSize: 18)),
-              subtitle: Text('${profile.contacts.length} คน',
+              title: Text(tr('profile.family'),
+                  style: const TextStyle(fontSize: 18)),
+              subtitle: Text(
+                  trp('profile.familyCount',
+                      {'n': '${profile.contacts.length}'}),
                   style: const TextStyle(fontSize: 15)),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {

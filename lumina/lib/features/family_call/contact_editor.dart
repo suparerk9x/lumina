@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/user_profile.dart';
 
@@ -58,7 +59,7 @@ class _ContactEditorState extends State<ContactEditor> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('เลือกรูปไม่สำเร็จ')),
+          SnackBar(content: Text(tr('family.photoPickFailed'))),
         );
       }
     }
@@ -69,7 +70,7 @@ class _ContactEditorState extends State<ContactEditor> {
     final phone = _phoneController.text.trim();
     if (name.isEmpty || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกชื่อและเบอร์โทร')),
+        SnackBar(content: Text(tr('family.namePhoneRequired'))),
       );
       return;
     }
@@ -98,7 +99,7 @@ class _ContactEditorState extends State<ContactEditor> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก'),
+        title: Text(isEditing ? tr('family.editMember') : tr('family.addMember')),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
@@ -123,39 +124,41 @@ class _ContactEditorState extends State<ContactEditor> {
             child: TextButton.icon(
               onPressed: _pickPhoto,
               icon: const Icon(Icons.photo_library_rounded),
-              label: Text(photoBytes == null ? 'เพิ่มรูป' : 'เปลี่ยนรูป'),
+              label: Text(
+                  photoBytes == null ? tr('family.addPhoto') : tr('family.changePhoto')),
             ),
           ),
           const SizedBox(height: 24),
-          Text('ชื่อ', style: Theme.of(context).textTheme.titleMedium),
+          Text(tr('family.nameLabel'),
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           TextField(
             controller: _nameController,
             style: const TextStyle(fontSize: 20),
-            decoration: const InputDecoration(
-              hintText: 'เช่น ลูกสาว, หลานชาย',
-              prefixIcon: Icon(Icons.person_rounded),
+            decoration: InputDecoration(
+              hintText: tr('family.nameHint'),
+              prefixIcon: const Icon(Icons.person_rounded),
             ),
           ),
           const SizedBox(height: 20),
-          Text('เบอร์โทรศัพท์',
+          Text(tr('family.phoneLabel'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             style: const TextStyle(fontSize: 20),
-            decoration: const InputDecoration(
-              hintText: 'เช่น 0812345678',
-              prefixIcon: Icon(Icons.phone_rounded),
+            decoration: InputDecoration(
+              hintText: tr('family.phoneHint'),
+              prefixIcon: const Icon(Icons.phone_rounded),
             ),
           ),
           const SizedBox(height: 20),
-          Text('LINE User ID (ไม่บังคับ)',
+          Text(tr('family.lineIdLabel'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
-            'สำหรับส่งแจ้งเตือนอาการง่วงไปหาคนนี้ผ่าน LINE',
+            tr('family.lineIdDesc'),
             style: TextStyle(
               fontSize: 14,
               color: Theme.of(context).brightness == Brightness.dark
@@ -167,9 +170,9 @@ class _ContactEditorState extends State<ContactEditor> {
           TextField(
             controller: _lineController,
             style: const TextStyle(fontSize: 18),
-            decoration: const InputDecoration(
-              hintText: 'Uxxxxxxxx… (ได้จากการแอด LINE OA)',
-              prefixIcon: Icon(Icons.chat_rounded),
+            decoration: InputDecoration(
+              hintText: tr('family.lineIdHint'),
+              prefixIcon: const Icon(Icons.chat_rounded),
             ),
           ),
           const SizedBox(height: 32),
@@ -178,7 +181,7 @@ class _ContactEditorState extends State<ContactEditor> {
             child: ElevatedButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.check_rounded),
-              label: const Text('บันทึก'),
+              label: Text(tr('family.save')),
             ),
           ),
         ],

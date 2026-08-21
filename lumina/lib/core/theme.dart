@@ -1,31 +1,35 @@
 import 'package:flutter/material.dart';
 
+import 'strings.dart';
+
 /// ไฟล์นี้กำหนดธีม (สี, ฟอนต์, รูปร่างปุ่ม ฯลฯ) ของแอป Demenish AI
 /// ออกแบบให้ผู้สูงอายุอ่านง่าย โดยผ่านมาตรฐาน WCAG AA (คอนทราสต์สีเพียงพอ)
 
-/// สีพื้นหลังที่ผู้ใช้เลือกได้ (preset) พร้อมชื่อภาษาไทย
+/// สีพื้นหลังที่ผู้ใช้เลือกได้ (preset) — ชื่อแปลตามภาษา
 class BackgroundPreset {
   const BackgroundPreset({
-    required this.name,
+    required this.nameKey,
     required this.lightColor,
     required this.darkColor,
   });
 
-  final String name;
+  final String nameKey;
   final Color lightColor;
   final Color darkColor;
+
+  String get name => tr(nameKey);
 }
 
 /// รายการสีพื้นหลังให้เลือก 8 แบบ
 const List<BackgroundPreset> backgroundPresets = [
-  BackgroundPreset(name: 'ค่าเริ่มต้น', lightColor: Color(0xFFF0F5F5), darkColor: Color(0xFF162224)),
-  BackgroundPreset(name: 'ครีม', lightColor: Color(0xFFFFF8E7), darkColor: Color(0xFF2A2520)),
-  BackgroundPreset(name: 'ฟ้าอ่อน', lightColor: Color(0xFFE8F4FD), darkColor: Color(0xFF1A2332)),
-  BackgroundPreset(name: 'เขียวอ่อน', lightColor: Color(0xFFE8F5E9), darkColor: Color(0xFF1A2E1A)),
-  BackgroundPreset(name: 'ชมพูอ่อน', lightColor: Color(0xFFFCE4EC), darkColor: Color(0xFF2E1A22)),
-  BackgroundPreset(name: 'ม่วงอ่อน', lightColor: Color(0xFFF3E5F5), darkColor: Color(0xFF261A2E)),
-  BackgroundPreset(name: 'ส้มอ่อน', lightColor: Color(0xFFFFF3E0), darkColor: Color(0xFF2E2518)),
-  BackgroundPreset(name: 'เทาอ่อน', lightColor: Color(0xFFECEFF1), darkColor: Color(0xFF222528)),
+  BackgroundPreset(nameKey: 'bg.default', lightColor: Color(0xFFF0F5F5), darkColor: Color(0xFF162224)),
+  BackgroundPreset(nameKey: 'bg.cream', lightColor: Color(0xFFFFF8E7), darkColor: Color(0xFF2A2520)),
+  BackgroundPreset(nameKey: 'bg.lightBlue', lightColor: Color(0xFFE8F4FD), darkColor: Color(0xFF1A2332)),
+  BackgroundPreset(nameKey: 'bg.lightGreen', lightColor: Color(0xFFE8F5E9), darkColor: Color(0xFF1A2E1A)),
+  BackgroundPreset(nameKey: 'bg.lightPink', lightColor: Color(0xFFFCE4EC), darkColor: Color(0xFF2E1A22)),
+  BackgroundPreset(nameKey: 'bg.lightPurple', lightColor: Color(0xFFF3E5F5), darkColor: Color(0xFF261A2E)),
+  BackgroundPreset(nameKey: 'bg.lightOrange', lightColor: Color(0xFFFFF3E0), darkColor: Color(0xFF2E2518)),
+  BackgroundPreset(nameKey: 'bg.lightGray', lightColor: Color(0xFFECEFF1), darkColor: Color(0xFF222528)),
 ];
 
 /// คลาสรวมค่าธีมทั้งหมด ใช้ static เพื่อเรียกได้โดยไม่ต้องสร้าง object

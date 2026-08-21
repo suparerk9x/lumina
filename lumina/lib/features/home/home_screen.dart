@@ -172,7 +172,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 class _GreetingCard extends StatelessWidget {
   const _GreetingCard();
 
-  String _todayThaiDate() => 'วันที่ ${formatThaiDate(DateTime.now())}';
+  String _todayThaiDate() =>
+      '${tr('home.dateLabel')} ${formatThaiDate(DateTime.now())}';
 
   @override
   Widget build(BuildContext context) {

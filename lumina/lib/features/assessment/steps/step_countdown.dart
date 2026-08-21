@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../assessment_state.dart';
 
@@ -94,7 +95,7 @@ class _StepCountdownState extends ConsumerState<StepCountdown> {
                     size: 36, color: AppTheme.primary),
                 const SizedBox(height: 8),
                 Text(
-                  'นับถอยหลังจาก 20 ลบครั้งละ 3',
+                  tr('assess.countdownInstruction'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.primary,
                         fontWeight: FontWeight.w600,
@@ -131,7 +132,7 @@ class _StepCountdownState extends ConsumerState<StepCountdown> {
 
           // แสดงคำถาม เช่น "เริ่มจากตัวเลขอะไร?" หรือ "20 ลบ 3 ได้เท่าไหร่?"
           Text(
-            'คำตอบที่ ${_currentQuestion + 1}',
+            trp('assess.answerNumber', {'n': '${_currentQuestion + 1}'}),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
@@ -139,12 +140,13 @@ class _StepCountdownState extends ConsumerState<StepCountdown> {
           const SizedBox(height: 8),
           if (_currentQuestion == 0)
             Text(
-              'เริ่มจากตัวเลขอะไร?',
+              tr('assess.startingNumberQuestion'),
               style: Theme.of(context).textTheme.titleLarge,
             )
           else
             Text(
-              '${_expectedAnswers[_currentQuestion - 1]} ลบ 3 ได้เท่าไหร่?',
+              trp('assess.minusThreeQuestion',
+                  {'value': '${_expectedAnswers[_currentQuestion - 1]}'}),
               style: Theme.of(context).textTheme.titleLarge,
             ),
           const SizedBox(height: 24),
@@ -270,12 +272,12 @@ class _StepCountdownState extends ConsumerState<StepCountdown> {
                     size: 64, color: AppTheme.success),
                 const SizedBox(height: 16),
                 Text(
-                  'ตอบครบแล้ว!',
+                  tr('assess.allAnsweredTitle'),
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'ถูก $score จาก 5 ข้อ',
+                  trp('assess.correctOutOfFive', {'score': '$score'}),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
@@ -313,12 +315,13 @@ class _StepCountdownState extends ConsumerState<StepCountdown> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'คุณตอบ: ${_userAnswers[i]}',
+                      trp('assess.yourAnswer', {'answer': '${_userAnswers[i]}'}),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
                   Text(
-                    'เฉลย: ${_expectedAnswers[i]}',
+                    trp('assess.correctAnswer',
+                        {'answer': '${_expectedAnswers[i]}'}),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -332,7 +335,7 @@ class _StepCountdownState extends ConsumerState<StepCountdown> {
             onPressed: () {
               ref.read(assessmentProvider.notifier).nextStep();
             },
-            child: const Text('ไปข้อถัดไป'),
+            child: Text(tr('assess.nextQuestion')),
           ),
         ],
       ),

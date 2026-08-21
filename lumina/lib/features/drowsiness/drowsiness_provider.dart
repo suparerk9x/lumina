@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/strings.dart';
 import '../../shared/services/face_sampling_service.dart';
 import '../../shared/services/line_service.dart';
 import '../../shared/services/notification_service.dart';
@@ -129,15 +130,14 @@ class DrowsinessNotifier extends Notifier<DrowsinessState> {
 
     await NotificationService().showNow(
       id: _kDrowsyNotifId,
-      title: 'พักสักครู่นะ',
-      body: 'ดูเหมือนกำลังง่วง ลองพักสายตาหรืองีบสักครู่',
+      title: tr('notif.drowsyTitle'),
+      body: tr('notif.drowsyBody'),
     );
 
     final name = StorageService().getUserProfile().name;
-    final who = name.isNotEmpty ? name : 'คนที่บ้าน';
+    final who = name.isNotEmpty ? name : tr('notif.someoneAtHome');
     // เฟส 0: broadcast หาทุกคนที่แอด OA (multi-tenant จะเปลี่ยนเป็น push ต่อบ้าน)
-    await LineService()
-        .broadcast('$who ดูเหมือนกำลังง่วง/เหนื่อยล้า ลองโทรถามอาการหน่อยนะ');
+    await LineService().broadcast(trp('notif.drowsyLine', {'who': who}));
   }
 }
 

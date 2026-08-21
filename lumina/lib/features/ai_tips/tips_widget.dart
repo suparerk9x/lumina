@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/storage_service.dart';
 
@@ -20,12 +21,12 @@ class AiTipsCard extends StatefulWidget {
 
 class _AiTipsCardState extends State<AiTipsCard> {
   // คำแนะนำทั่วไปที่จะใช้เมื่อไม่มีข้อมูลเฉพาะ (สุ่มตามวันที่)
-  static const _defaultTips = [
-    'อ่านหนังสือหรือนิตยสารวันละ 15 นาที ช่วยกระตุ้นสมอง',
-    'ลองเรียนรู้สิ่งใหม่ ๆ ทุกวัน เช่น คำศัพท์ใหม่ 1 คำ',
-    'ออกกำลังกายเบา ๆ เช่น เดินเล่น ช่วยให้สมองแข็งแรง',
-    'นอนหลับให้เพียงพอ 7-8 ชั่วโมง สมองจะได้พักผ่อน',
-    'ทานอาหารที่มีโอเมก้า 3 เช่น ปลา ช่วยบำรุงสมอง',
+  static final _defaultTips = [
+    tr('tips.default1'),
+    tr('tips.default2'),
+    tr('tips.default3'),
+    tr('tips.default4'),
+    tr('tips.default5'),
   ];
 
   // คำแนะนำที่จะแสดงในการ์ด
@@ -50,13 +51,13 @@ class _AiTipsCardState extends State<AiTipsCard> {
 
       if (assessments.isNotEmpty && assessments.first.totalScore < 5) {
         if (soundScores.isEmpty && sequenceScores.isEmpty) {
-          return 'ลองเล่นเกมจับคู่เสียงวันละ 1 ครั้ง เพื่อฝึกความจำ';
+          return tr('tips.playSoundGame');
         }
       }
 
       if (assessments.length >= 2 &&
           assessments[0].totalScore > assessments[1].totalScore) {
-        return 'เยี่ยมมาก! สมองแข็งแรงขึ้น 🌟 ทำต่อไปนะ';
+        return tr('tips.improved');
       }
     } catch (e) {
       developer.log('AiTipsCard error: $e', name: 'DemenishAI');
@@ -97,7 +98,7 @@ class _AiTipsCardState extends State<AiTipsCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'คำแนะนำวันนี้',
+                    tr('tips.todayHeader'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.primary,
                           fontWeight: FontWeight.w600,

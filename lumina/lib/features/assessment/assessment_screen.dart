@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/exit_dialog.dart';
 import 'assessment_state.dart';
@@ -51,7 +52,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
     return Scaffold(
       // AppBar: ถ้าอยู่ step แรก แสดงปุ่มปิด (X), ถ้าอยู่ step อื่นแสดงปุ่มย้อนกลับ
       appBar: AppBar(
-        title: const Text('แบบประเมินสมอง'),
+        title: Text(tr('assess.appBarTitle')),
         leading: state.currentStep > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
@@ -65,8 +66,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                   // แสดง dialog ยืนยันว่าต้องการออกจริงหรือไม่
                   final exit = await showExitConfirmation(
                     context,
-                    title: 'ออกจากแบบประเมิน?',
-                    message: 'ผลที่ทำไปจะไม่ถูกบันทึก',
+                    title: tr('assess.exitTitle'),
+                    message: tr('assess.exitMessage'),
                   );
                   if (exit && context.mounted) Navigator.of(context).pop();
                 },

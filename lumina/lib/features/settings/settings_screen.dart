@@ -124,7 +124,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'แอปฝึกสมองสำหรับผู้สูงอายุ',
+                    tr('settings.appDescription'),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: isDark
                               ? AppTheme.darkTextSecondary
@@ -133,7 +133,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'เวอร์ชัน ${AppConstants.appVersion}',
+                    trp('settings.version', {'v': AppConstants.appVersion}),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isDark
                               ? AppTheme.darkTextSecondary
@@ -168,7 +168,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'จัดการข้อมูล',
+                        tr('settings.manageData'),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
@@ -185,21 +185,19 @@ class SettingsScreen extends ConsumerWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            title: const Text('ลบข้อมูลทั้งหมด?'),
-                            content: const Text(
-                              'คะแนนประเมิน คะแนนเกม และการตั้งค่าจะถูกลบหมด',
-                            ),
+                            title: Text(tr('settings.deleteAllTitle')),
+                            content: Text(tr('settings.deleteAllConfirm')),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('ยกเลิก'),
+                                child: Text(tr('common.cancel')),
                               ),
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, true),
                                 style: TextButton.styleFrom(
                                   foregroundColor: AppTheme.error,
                                 ),
-                                child: const Text('ลบทั้งหมด'),
+                                child: Text(tr('settings.deleteAllConfirmBtn')),
                               ),
                             ],
                           ),
@@ -215,8 +213,8 @@ class SettingsScreen extends ConsumerWidget {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('ลบข้อมูลเรียบร้อยแล้ว',
-                                    style: TextStyle(fontSize: 18)),
+                                content: Text(tr('settings.deleteAllDone'),
+                                    style: const TextStyle(fontSize: 18)),
                                 backgroundColor: AppTheme.success,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
@@ -230,7 +228,7 @@ class SettingsScreen extends ConsumerWidget {
                         foregroundColor: AppTheme.error,
                         side: const BorderSide(color: AppTheme.error),
                       ),
-                      child: const Text('ลบข้อมูลทั้งหมด'),
+                      child: Text(tr('settings.deleteAllButton')),
                     ),
                   ),
                 ],
@@ -581,7 +579,7 @@ class _ThemeModeSection extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'โหมดธีม',
+                  tr('settings.theme'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -694,7 +692,7 @@ class _BackgroundColorSection extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'สีพื้นหลัง',
+                  tr('settings.background'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -817,7 +815,7 @@ class _FontFamilySection extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'แบบตัวอักษร',
+                  tr('settings.font'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -903,7 +901,7 @@ class _FontFamilySection extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'กขค',
+                            tr('settings.fontSample'),
                             style: TextStyle(
                               fontFamily: font.family,
                               fontSize: 22,
@@ -975,7 +973,7 @@ class _FontScaleSection extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'ขนาดตัวอักษร',
+                  tr('settings.fontSize'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -991,7 +989,7 @@ class _FontScaleSection extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'ตัวอย่างข้อความ',
+                    tr('settings.sampleText'),
                     style: TextStyle(
                       fontFamily: fontFamily,
                       fontSize: 20 * current.value,
@@ -1001,7 +999,7 @@ class _FontScaleSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'สวัสดี วันนี้เป็นอย่างไรบ้าง?',
+                    tr('settings.samplePreview'),
                     style: TextStyle(
                       fontFamily: fontFamily,
                       fontSize: 18 * current.value,
@@ -1080,7 +1078,7 @@ class _FontScaleSection extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            'อ',
+                            tr('settings.fontSampleLetter'),
                             style: TextStyle(
                               fontFamily: fontFamily,
                               fontSize: 24 * scale.value,

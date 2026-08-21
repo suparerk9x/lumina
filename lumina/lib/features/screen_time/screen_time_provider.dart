@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../core/strings.dart';
 import '../../shared/storage/hive_boxes.dart';
 import '../../shared/storage/storage_service.dart';
 
@@ -40,23 +41,26 @@ class ScreenTimeState {
     return (todayUsage.inSeconds / dailyLimit.inSeconds).clamp(0.0, 1.5);
   }
 
-  /// แปลงเวลาที่ใช้เป็นข้อความภาษาไทย เช่น "1 ชม. 30 น. 5 วิ."
+  /// แปลงเวลาที่ใช้เป็นข้อความ (แปลตามภาษา) เช่น "1 h 30 min 5 s"
   String get usageFormatted {
     final h = todayUsage.inHours;
     final m = todayUsage.inMinutes % 60;
     final s = todayUsage.inSeconds % 60;
-    if (h > 0) return '$h ชม. $m น. $s วิ.';
-    if (m > 0) return '$m น. $s วิ.';
-    return '$s วินาที';
+    final uh = tr('screen.unitH');
+    final um = tr('screen.unitMin');
+    final us = tr('screen.unitSec');
+    if (h > 0) return '$h $uh $m $um $s $us';
+    if (m > 0) return '$m $um $s $us';
+    return '$s $us';
   }
 
-  /// แปลงเวลาจำกัดเป็นข้อความภาษาไทย เช่น "2 ชม. 30 น."
+  /// แปลงเวลาจำกัดเป็นข้อความ (แปลตามภาษา) เช่น "2 h 30 min"
   String get limitFormatted {
     final h = dailyLimit.inHours;
     final m = dailyLimit.inMinutes % 60;
-    if (h > 0 && m > 0) return '$h ชม. $m น.';
-    if (h > 0) return '$h ชั่วโมง';
-    return '$m นาที';
+    if (h > 0 && m > 0) return '$h ${tr('screen.unitH')} $m ${tr('screen.unitMin')}';
+    if (h > 0) return '$h ${tr('screen.unitHourLong')}';
+    return '$m ${tr('screen.unitMinLong')}';
   }
 
   /// สร้างสำเนาของ state พร้อมเปลี่ยนค่าบางตัว (Immutable pattern)

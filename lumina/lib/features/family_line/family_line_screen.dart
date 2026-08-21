@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/services/line_service.dart';
 
@@ -17,7 +18,7 @@ class FamilyLineScreen extends StatelessWidget {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('เปิด LINE ไม่สำเร็จ')),
+          SnackBar(content: Text(tr('family.lineOpenFailed'))),
         );
       }
     }
@@ -25,13 +26,13 @@ class FamilyLineScreen extends StatelessWidget {
 
   Future<void> _testBroadcast(BuildContext context) async {
     final ok = await LineService()
-        .broadcast('ทดสอบแจ้งเตือนจาก Demenish AI — ถ้าเห็นข้อความนี้แปลว่าพร้อมแล้ว');
+        .broadcast(tr('family.testBroadcastMessage'));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok
-            ? 'ส่งข้อความทดสอบแล้ว — เช็ก LINE ของคนที่แอด OA'
-            : 'ยังส่งไม่ได้ (แอปนี้ยังไม่ได้ตั้งค่า LINE — ต้อง build ด้วย --dart-define)'),
+            ? tr('family.testSent')
+            : tr('family.testNotConfigured')),
       ),
     );
   }
@@ -45,12 +46,12 @@ class FamilyLineScreen extends StatelessWidget {
     final line = LineService();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('แจ้งครอบครัวผ่าน LINE')),
+      appBar: AppBar(title: Text(tr('family.lineTitle'))),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Text(
-            'ให้ลูกหลานสแกน QR นี้เพื่อรับแจ้งเตือน\nเมื่อผู้สูงอายุมีอาการง่วง/เหนื่อยล้า',
+            tr('family.lineIntro'),
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -94,18 +95,18 @@ class FamilyLineScreen extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _openLine(context),
               icon: const Icon(Icons.open_in_new_rounded),
-              label: const Text('เปิด LINE เพื่อแอด'),
+              label: Text(tr('family.openLineToAdd')),
             ),
           ),
           const SizedBox(height: 28),
 
           // ขั้นตอน
           _StepCard(
-            steps: const [
-              'ลูกหลานเปิดแอป LINE บนมือถือตัวเอง',
-              'สแกน QR นี้ (หรือกดปุ่มเปิด LINE) แล้วแอด "Demenish-AI" เป็นเพื่อน',
-              'เปิดฟีเจอร์ "ตรวจจับอาการง่วง" ในหน้าตั้งค่า',
-              'เมื่อแอปพบอาการง่วง ทุกคนที่แอดจะได้รับแจ้งเตือนใน LINE',
+            steps: [
+              tr('family.step1'),
+              tr('family.step2'),
+              tr('family.step3'),
+              tr('family.step4'),
             ],
           ),
           const SizedBox(height: 24),
@@ -116,7 +117,7 @@ class FamilyLineScreen extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _testBroadcast(context),
                 icon: const Icon(Icons.send_rounded),
-                label: const Text('ทดสอบส่งแจ้งเตือน'),
+                label: Text(tr('family.testSend')),
               ),
             )
           else
@@ -127,8 +128,7 @@ class FamilyLineScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'แอปนี้ยังไม่ได้ตั้งค่าเชื่อม LINE — ต้อง build ด้วย '
-                '--dart-define (ดู docs/backend) จึงจะส่งแจ้งเตือนจริงได้',
+                tr('family.notConfiguredNotice'),
                 style: TextStyle(fontSize: 14, color: secondary),
               ),
             ),

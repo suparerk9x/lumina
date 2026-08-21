@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 
 /// ไฟล์นี้เป็นหน้าจอแสดงผลลัพธ์หลังเล่นเกมฝึกสมองเสร็จ
@@ -15,14 +16,14 @@ class GameResultScreen extends StatelessWidget {
     required this.total,
     required this.onPlayAgain,
     required this.onGoHome,
-    this.goodMessage = 'ยอดเยี่ยม! 🎉',
-    this.okMessage = 'ดีมาก! 👍',
-    this.fairMessage = 'พอใช้ ลองอีกครั้ง 💪',
-    this.lowMessage = 'ลองใหม่นะ 🙂',
-    this.goodSub = 'ทำได้ดีเยี่ยม',
-    this.okSub = 'ทำได้ดี ลองฝึกเพิ่มอีกนิด',
-    this.fairSub = 'ค่อย ๆ ฝึก จะดีขึ้นเรื่อย ๆ',
-    this.lowSub = 'ไม่เป็นไร ลองเล่นอีกครั้ง',
+    this.goodMessage,
+    this.okMessage,
+    this.fairMessage,
+    this.lowMessage,
+    this.goodSub,
+    this.okSub,
+    this.fairSub,
+    this.lowSub,
   });
 
   final String title;
@@ -30,8 +31,8 @@ class GameResultScreen extends StatelessWidget {
   final int total;
   final VoidCallback onPlayAgain;
   final VoidCallback onGoHome;
-  final String goodMessage, okMessage, fairMessage, lowMessage;
-  final String goodSub, okSub, fairSub, lowSub;
+  final String? goodMessage, okMessage, fairMessage, lowMessage;
+  final String? goodSub, okSub, fairSub, lowSub;
 
   /// คำนวณจำนวนดาว: >=80% = 3 ดาว, >=50% = 2 ดาว, >=25% = 1 ดาว
   int get _stars {
@@ -55,20 +56,20 @@ class GameResultScreen extends StatelessWidget {
   /// เลือกข้อความหลักตามจำนวนดาว
   String get _message {
     switch (_stars) {
-      case 3: return goodMessage;
-      case 2: return okMessage;
-      case 1: return fairMessage;
-      default: return lowMessage;
+      case 3: return goodMessage ?? tr('game.result.goodMessage');
+      case 2: return okMessage ?? tr('game.result.okMessage');
+      case 1: return fairMessage ?? tr('game.result.fairMessage');
+      default: return lowMessage ?? tr('game.result.lowMessage');
     }
   }
 
   /// เลือกข้อความรองตามจำนวนดาว
   String get _sub {
     switch (_stars) {
-      case 3: return goodSub;
-      case 2: return okSub;
-      case 1: return fairSub;
-      default: return lowSub;
+      case 3: return goodSub ?? tr('game.result.goodSub');
+      case 2: return okSub ?? tr('game.result.okSub');
+      case 1: return fairSub ?? tr('game.result.fairSub');
+      default: return lowSub ?? tr('game.result.lowSub');
     }
   }
 
@@ -128,7 +129,7 @@ class GameResultScreen extends StatelessWidget {
                           ),
                     ),
                     Text(
-                      'จาก $total',
+                      trp('game.result.outOf', {'total': '$total'}),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.textSecondary,
                           ),
@@ -161,12 +162,12 @@ class GameResultScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onPlayAgain,
                 icon: const Icon(Icons.replay_rounded),
-                label: const Text('เล่นอีกครั้ง'),
+                label: Text(tr('game.playAgain')),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: onGoHome,
-                child: const Text('กลับหน้าหลัก'),
+                child: Text(tr('game.goHome')),
               ),
             ],
           ),

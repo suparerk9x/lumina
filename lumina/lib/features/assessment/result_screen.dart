@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import 'assessment_screen.dart';
 import 'assessment_state.dart';
@@ -47,7 +48,7 @@ class _AssessmentResultScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ผลการประเมิน'),
+        title: Text(tr('assess.resultTitle')),
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -77,7 +78,7 @@ class _AssessmentResultScreenState
                         ),
                   ),
                   Text(
-                    'จาก $max',
+                    trp('assess.outOf', {'max': '$max'}),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -113,17 +114,17 @@ class _AssessmentResultScreenState
 
             // แสดงคะแนนแยกแต่ละส่วนเป็นแถบกราฟ
             _ScoreBreakdown(
-              label: 'วัน/เวลา',
+              label: tr('assess.breakdownDateTime'),
               score: state.dateTimeScore,
               max: 2,
             ),
             _ScoreBreakdown(
-              label: 'นับถอยหลัง',
+              label: tr('assess.breakdownCountdown'),
               score: state.countdownScore,
               max: 5,
             ),
             _ScoreBreakdown(
-              label: 'จำคำ',
+              label: tr('assess.breakdownRecall'),
               score: state.recallScore,
               max: 3,
             ),
@@ -150,7 +151,7 @@ class _AssessmentResultScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'ข้อแนะนำ',
+                            tr('assess.adviceTitle'),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -161,8 +162,7 @@ class _AssessmentResultScreenState
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'นี่เป็นเพียงการคัดกรองเบื้องต้น ไม่ใช่การวินิจฉัย '
-                            'หากกังวล แนะนำให้ปรึกษาแพทย์เพื่อรับคำแนะนำเพิ่มเติม',
+                            tr('assess.adviceBody'),
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -188,7 +188,7 @@ class _AssessmentResultScreenState
                         size: 18, color: AppTheme.textSecondary),
                     const SizedBox(width: 6),
                     Text(
-                      'บันทึกผลแล้ว',
+                      tr('assess.savedResult'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.textSecondary,
                             fontSize: 16,
@@ -209,14 +209,14 @@ class _AssessmentResultScreenState
                   ),
                 );
               },
-              child: const Text('ทำแบบประเมินอีกครั้ง'),
+              child: Text(tr('assess.retakeButton')),
             ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('กลับหน้าหลัก'),
+              child: Text(tr('assess.backHomeButton')),
             ),
           ],
         ),
@@ -227,25 +227,23 @@ class _AssessmentResultScreenState
   /// กำหนดระดับผลลัพธ์จากคะแนน: >=8 ดีมาก, 5-7 ปานกลาง, <=4 ควรพบแพทย์
   _ResultTier _getTier(int score) {
     if (score >= 8) {
-      return const _ResultTier(
-        title: 'ดีมาก! สมองแข็งแรง',
-        description: 'ผลการประเมินอยู่ในเกณฑ์ดี ควรทำกิจกรรมฝึกสมองอย่างสม่ำเสมอ',
+      return _ResultTier(
+        title: tr('assess.tierGoodTitle'),
+        description: tr('assess.tierGoodDesc'),
         emoji: '💪',
         color: AppTheme.success,
       );
     } else if (score >= 5) {
-      return const _ResultTier(
-        title: 'ปานกลาง ควรฝึกเพิ่ม',
-        description:
-            'ผลการประเมินอยู่ในระดับปานกลาง แนะนำให้ฝึกสมองเป็นประจำทุกวัน',
+      return _ResultTier(
+        title: tr('assess.tierMediumTitle'),
+        description: tr('assess.tierMediumDesc'),
         emoji: '🙂',
         color: AppTheme.warning,
       );
     } else {
-      return const _ResultTier(
-        title: 'ควรพบแพทย์ผู้เชี่ยวชาญ',
-        description:
-            'ผลการประเมินอยู่ในระดับที่ควรได้รับการดูแลเพิ่มเติม',
+      return _ResultTier(
+        title: tr('assess.tierLowTitle'),
+        description: tr('assess.tierLowDesc'),
         emoji: '⚠️',
         color: AppTheme.error,
       );

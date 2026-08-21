@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../../../shared/widgets/exit_dialog.dart';
 import 'sequence_data.dart';
@@ -61,12 +62,12 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('เรียงลำดับ'),
+        title: Text(tr('game.sequence.title')),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () async {
             final exit = await showExitConfirmation(context,
-                title: 'ออกจากเกม?', message: 'คะแนนจะไม่ถูกบันทึก');
+                title: tr('game.exit.title'), message: tr('game.exit.message'));
             if (exit && context.mounted) Navigator.of(context).pop();
           },
         ),
@@ -104,7 +105,7 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'แตะตามลำดับที่ถูกต้อง',
+                    tr('game.sequence.tapInOrder'),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -181,7 +182,7 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
                 ref.read(sequenceGameProvider.notifier).undoLastTap();
               },
               icon: const Icon(Icons.undo_rounded),
-              label: const Text('ย้อนกลับ'),
+              label: Text(tr('game.sequence.undo')),
             ),
           ),
         // ปุ่มส่งคำตอบ (จะกดได้ก็ต่อเมื่อแตะครบทุกรายการแล้ว)
@@ -196,8 +197,11 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
                 : null,
             child: Text(
               state.allTapped
-                  ? 'ส่งคำตอบ'
-                  : 'แตะ ${state.itemsInRound - state.tappedOrder.length} รายการ',
+                  ? tr('game.sequence.submit')
+                  : trp('game.sequence.tapNMore', {
+                      'n':
+                          '${state.itemsInRound - state.tappedOrder.length}'
+                    }),
             ),
           ),
         ),
@@ -239,7 +243,9 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
               ),
               const SizedBox(width: 10),
               Text(
-                isCorrect ? 'ถูกต้อง! ✓' : 'ลำดับยังไม่ถูก ดูเฉลยด้านบน',
+                isCorrect
+                    ? tr('game.sequence.correct')
+                    : tr('game.sequence.wrongOrder'),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: isCorrect ? AppTheme.success : AppTheme.error,
                       fontWeight: FontWeight.w600,
@@ -259,8 +265,8 @@ class _SequenceGameState extends ConsumerState<SequenceGame> {
             },
             child: Text(
               state.currentRound < state.totalRounds - 1
-                  ? 'ข้อถัดไป'
-                  : 'ดูผลคะแนน',
+                  ? tr('game.sequence.nextItem')
+                  : tr('game.sequence.viewScore'),
             ),
           ),
         ),

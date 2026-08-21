@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/appointment.dart';
 import '../../shared/utils/thai_date.dart';
@@ -68,7 +69,7 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกหัวข้อนัดหมาย')),
+        SnackBar(content: Text(tr('appt.titleRequired'))),
       );
       return;
     }
@@ -100,19 +101,20 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
     final mm = _time.minute.toString().padLeft(2, '0');
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'แก้ไขนัดหมาย' : 'เพิ่มนัดหมาย')),
+      appBar: AppBar(
+          title: Text(isEditing ? tr('appt.editHeader') : tr('appt.addHeader'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('หัวข้อนัดหมาย',
+          Text(tr('appt.titleField'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           TextField(
             controller: _titleController,
             style: const TextStyle(fontSize: 20),
-            decoration: const InputDecoration(
-              hintText: 'เช่น ตรวจเบาหวาน, พบหมอหัวใจ',
-              prefixIcon: Icon(Icons.event_note_rounded),
+            decoration: InputDecoration(
+              hintText: tr('appt.titleHint'),
+              prefixIcon: const Icon(Icons.event_note_rounded),
             ),
           ),
           const SizedBox(height: 20),
@@ -123,7 +125,7 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
               Expanded(
                 child: _PickerTile(
                   icon: Icons.calendar_today_rounded,
-                  label: 'วันที่',
+                  label: tr('appt.dateLabel'),
                   value: formatThaiDate(_date),
                   onTap: _pickDate,
                 ),
@@ -132,8 +134,8 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
               Expanded(
                 child: _PickerTile(
                   icon: Icons.access_time_rounded,
-                  label: 'เวลา',
-                  value: '$hh:$mm น.',
+                  label: tr('appt.timeLabel'),
+                  value: trp('appt.timeValue', {'time': '$hh:$mm'}),
                   onTap: _pickTime,
                 ),
               ),
@@ -141,20 +143,20 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
           ),
           const SizedBox(height: 20),
 
-          Text('สถานที่ / แพทย์',
+          Text(tr('appt.locationField'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           TextField(
             controller: _locationController,
             style: const TextStyle(fontSize: 20),
-            decoration: const InputDecoration(
-              hintText: 'เช่น รพ.ศิริราช แผนกอายุรกรรม',
-              prefixIcon: Icon(Icons.local_hospital_rounded),
+            decoration: InputDecoration(
+              hintText: tr('appt.locationHint'),
+              prefixIcon: const Icon(Icons.local_hospital_rounded),
             ),
           ),
           const SizedBox(height: 20),
 
-          Text('เตือนล่วงหน้า',
+          Text(tr('appt.reminderField'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Wrap(
@@ -171,15 +173,15 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
           ),
           const SizedBox(height: 20),
 
-          Text('บันทึกเพิ่มเติม',
+          Text(tr('appt.noteField'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           TextField(
             controller: _noteController,
             style: const TextStyle(fontSize: 18),
             maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'เช่น งดน้ำงดอาหารก่อนตรวจ',
+            decoration: InputDecoration(
+              hintText: tr('appt.noteHint'),
             ),
           ),
           const SizedBox(height: 32),
@@ -188,7 +190,7 @@ class _AppointmentEditorState extends ConsumerState<AppointmentEditor> {
             child: ElevatedButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.check_rounded),
-              label: const Text('บันทึกนัดหมาย'),
+              label: Text(tr('appt.save')),
             ),
           ),
         ],

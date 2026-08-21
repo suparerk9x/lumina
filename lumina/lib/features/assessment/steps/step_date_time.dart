@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../assessment_state.dart';
 
@@ -95,7 +96,9 @@ class _StepDateTimeState extends ConsumerState<StepDateTime> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              _showTimeQuestion ? 'คำถามที่ 2/2' : 'คำถามที่ 1/2',
+              _showTimeQuestion
+                  ? tr('assess.question2of2')
+                  : tr('assess.question1of2'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.primary,
                     fontWeight: FontWeight.w600,
@@ -106,12 +109,12 @@ class _StepDateTimeState extends ConsumerState<StepDateTime> {
 
           if (!_showTimeQuestion) ...[
             Text(
-              'วันนี้เป็นวันอะไร?',
+              tr('assess.whatDayTitle'),
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'เลือกวันที่คุณคิดว่าถูกต้อง',
+              tr('assess.whatDaySubtitle'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -121,7 +124,7 @@ class _StepDateTimeState extends ConsumerState<StepDateTime> {
               (day) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _OptionButton(
-                  label: day,
+                  label: _dayLabel(day),
                   isSelected: _selectedDay == day,
                   onTap: () => _selectDay(day),
                 ),
@@ -129,12 +132,12 @@ class _StepDateTimeState extends ConsumerState<StepDateTime> {
             ),
           ] else ...[
             Text(
-              'ตอนนี้เป็นช่วงเวลาใด?',
+              tr('assess.whatTimeTitle'),
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'เลือกช่วงเวลาที่ถูกต้อง',
+              tr('assess.whatTimeSubtitle'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -144,7 +147,7 @@ class _StepDateTimeState extends ConsumerState<StepDateTime> {
               (period) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _OptionButton(
-                  label: period,
+                  label: _periodLabel(period),
                   icon: _iconForPeriod(period),
                   isSelected: _selectedTime == period,
                   onTap: () => _selectTime(period),
@@ -155,6 +158,35 @@ class _StepDateTimeState extends ConsumerState<StepDateTime> {
         ],
       ),
     );
+  }
+
+  /// แปลชื่อวัน (ค่าภายในเป็นภาษาไทย) เป็นข้อความที่แสดงตามภาษาปัจจุบัน
+  String _dayLabel(String day) {
+    const keys = {
+      'วันจันทร์': 'assess.dayMon',
+      'วันอังคาร': 'assess.dayTue',
+      'วันพุธ': 'assess.dayWed',
+      'วันพฤหัสบดี': 'assess.dayThu',
+      'วันศุกร์': 'assess.dayFri',
+      'วันเสาร์': 'assess.daySat',
+      'วันอาทิตย์': 'assess.daySun',
+    };
+    final key = keys[day];
+    return key != null ? tr(key) : day;
+  }
+
+  /// แปลชื่อช่วงเวลา (ค่าภายในเป็นภาษาไทย) เป็นข้อความที่แสดงตามภาษาปัจจุบัน
+  String _periodLabel(String period) {
+    switch (period) {
+      case 'เช้า':
+        return tr('assess.periodMorning');
+      case 'เที่ยง':
+        return tr('assess.periodNoon');
+      case 'เย็น':
+        return tr('assess.periodEvening');
+      default:
+        return tr('assess.periodNight');
+    }
   }
 
   /// เลือกไอคอนที่เหมาะกับแต่ละช่วงเวลา (พระอาทิตย์, พลบค่ำ, พระจันทร์)

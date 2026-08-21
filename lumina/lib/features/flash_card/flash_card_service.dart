@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../core/strings.dart';
 import '../../shared/storage/hive_boxes.dart';
 import '../../shared/storage/storage_service.dart';
 
@@ -24,15 +25,15 @@ class FlashCardService {
   static final FlashCardService _instance = FlashCardService._();
   factory FlashCardService() => _instance;
 
-  /// คำถามกระตุ้นความจำ (ใช้เมื่อยังไม่มีรูปครอบครัว)
-  static const List<String> _prompts = [
-    'วันนี้เป็นวันอะไร?',
-    'ตอนนี้ประมาณกี่โมงแล้ว?',
-    'เมื่อเช้ารับประทานอะไร?',
-    'เดือนนี้เดือนอะไร?',
-    'พรุ่งนี้ตั้งใจจะทำอะไร?',
-    'เมื่อวานได้คุยกับใครบ้าง?',
-    'ตอนนี้อยู่ที่ไหน?',
+  /// คีย์คำถามกระตุ้นความจำ (ใช้เมื่อยังไม่มีรูปครอบครัว) — แปลตามภาษา
+  static const List<String> _promptKeys = [
+    'flash.prompt1',
+    'flash.prompt2',
+    'flash.prompt3',
+    'flash.prompt4',
+    'flash.prompt5',
+    'flash.prompt6',
+    'flash.prompt7',
   ];
 
   Box get _box => Hive.box(HiveBoxes.flashCard);
@@ -72,14 +73,14 @@ class FlashCardService {
     if (withPhoto.isNotEmpty) {
       final c = withPhoto[dayIndex % withPhoto.length];
       return FlashCard(
-        question: 'คนนี้คือใคร?',
+        question: tr('flash.q.who'),
         imageBase64: c.photoBase64,
         answer: c.name,
       );
     }
 
-    if (_prompts.isNotEmpty) {
-      return FlashCard(question: _prompts[dayIndex % _prompts.length]);
+    if (_promptKeys.isNotEmpty) {
+      return FlashCard(question: tr(_promptKeys[dayIndex % _promptKeys.length]));
     }
     return null;
   }

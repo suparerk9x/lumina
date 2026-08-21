@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../../../shared/widgets/exit_dialog.dart' show showExitConfirmation;
 import 'color_sequence_provider.dart';
@@ -58,7 +59,7 @@ class _ColorSequenceGameState extends ConsumerState<ColorSequenceGame> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('กดปุ่มตามลำดับ'),
+          title: Text(tr('game.colorSequence.title')),
           leading: IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: () async {
@@ -82,14 +83,15 @@ class _ColorSequenceGameState extends ConsumerState<ColorSequenceGame> {
                     children: [
                       _StatItem(
                         icon: Icons.flag_rounded,
-                        label: 'ด่าน',
+                        label: tr('game.colorSequence.levelLabel'),
                         value: '${gameState.level}',
                         isDark: isDark,
                       ),
                       _StatItem(
                         icon: Icons.timeline_rounded,
-                        label: 'ลำดับ',
-                        value: '${gameState.sequenceLength} สี',
+                        label: tr('game.colorSequence.sequenceLabel'),
+                        value: trp('game.colorSequence.colorCount',
+                            {'n': '${gameState.sequenceLength}'}),
                         isDark: isDark,
                       ),
                     ],
@@ -171,15 +173,15 @@ class _ColorSequenceGameState extends ConsumerState<ColorSequenceGame> {
   String _phaseMessage(GamePhase phase) {
     switch (phase) {
       case GamePhase.ready:
-        return 'เตรียมพร้อม...';
+        return tr('game.colorSequence.phaseReady');
       case GamePhase.showing:
-        return 'จำลำดับให้ดี!';
+        return tr('game.colorSequence.phaseShowing');
       case GamePhase.inputting:
-        return 'กดตามลำดับเลย!';
+        return tr('game.colorSequence.phaseInputting');
       case GamePhase.correct:
-        return 'ถูกต้อง! ไปด่านถัดไป';
+        return tr('game.colorSequence.phaseCorrect');
       case GamePhase.wrong:
-        return 'ผิด! เกมจบ';
+        return tr('game.colorSequence.phaseWrong');
     }
   }
 }

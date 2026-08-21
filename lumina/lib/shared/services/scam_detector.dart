@@ -2,16 +2,21 @@
 // ทำงานบนเครื่องทั้งหมด (offline) ไม่ต้องต่อเน็ต ไม่มี AI model
 // ให้คะแนนความเสี่ยงจากคำต้องสงสัย + ลิงก์ที่น่าสงสัย พร้อมเหตุผลที่ตรวจเจอ
 
+import '../../core/strings.dart';
+
 /// ระดับความเสี่ยงของข้อความ
 enum ScamRisk {
-  low('ดูปลอดภัย', 'ไม่พบสัญญาณหลอกลวงชัดเจน แต่ถ้าไม่แน่ใจ ลองถามลูกหลานดูนะ'),
-  medium('น่าสงสัย', 'มีสัญญาณที่ต้องระวัง ตรวจสอบให้แน่ใจก่อนทำตาม'),
-  high('เสี่ยงสูง', 'อย่ากดลิงก์ อย่าโอนเงิน อย่าให้ข้อมูลส่วนตัว โทรถามลูกหลานก่อน');
+  low('scamrisk.low.label', 'scamrisk.low.advice'),
+  medium('scamrisk.medium.label', 'scamrisk.medium.advice'),
+  high('scamrisk.high.label', 'scamrisk.high.advice');
 
-  const ScamRisk(this.label, this.advice);
+  const ScamRisk(this.labelKey, this.adviceKey);
 
-  final String label;
-  final String advice;
+  final String labelKey;
+  final String adviceKey;
+
+  String get label => tr(labelKey);
+  String get advice => tr(adviceKey);
 }
 
 /// ผลการวิเคราะห์ข้อความ
@@ -78,35 +83,35 @@ class ScamDetector {
     final highHits = _highKeywords.where(lower.contains).toList();
     if (highHits.isNotEmpty) {
       score += 3 * highHits.length;
-      reasons.add('มีคำที่มักใช้หลอกลวง: ${_preview(highHits)}');
+      reasons.add(trp('scam.reason.highKeyword', {'items': _preview(highHits)}));
     }
 
     // 2) คำเสี่ยงกลาง
     final medHits = _mediumKeywords.where(lower.contains).toList();
     if (medHits.isNotEmpty) {
       score += medHits.length;
-      reasons.add('มีคำชวนเชื่อ/เร่งรีบ: ${_preview(medHits)}');
+      reasons.add(trp('scam.reason.medKeyword', {'items': _preview(medHits)}));
     }
 
     // 3) ลิงก์
     final hasUrl = _urlRegex.hasMatch(lower);
     if (hasUrl) {
       score += 1;
-      reasons.add('มีลิงก์ให้กด — ระวังก่อนกดทุกครั้ง');
+      reasons.add(tr('scam.reason.hasUrl'));
 
       if (_ipUrlRegex.hasMatch(lower)) {
         score += 3;
-        reasons.add('ลิงก์เป็นตัวเลข IP แทนชื่อเว็บ (พบมากในเว็บปลอม)');
+        reasons.add(tr('scam.reason.ipUrl'));
       }
       final shortener = _shorteners.where(lower.contains).toList();
       if (shortener.isNotEmpty) {
         score += 2;
-        reasons.add('ใช้ลิงก์ย่อที่ซ่อนปลายทาง: ${_preview(shortener)}');
+        reasons.add(trp('scam.reason.shortener', {'items': _preview(shortener)}));
       }
       final tld = _suspiciousTlds.where(lower.contains).toList();
       if (tld.isNotEmpty) {
         score += 2;
-        reasons.add('โดเมนแปลก (${_preview(tld)}) ไม่ใช่เว็บทางการ');
+        reasons.add(trp('scam.reason.suspiciousTld', {'items': _preview(tld)}));
       }
     }
 

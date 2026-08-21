@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../../../shared/widgets/exit_dialog.dart' show showExitConfirmation;
 import 'memory_match_provider.dart';
@@ -16,7 +17,7 @@ class MemoryMatchGame extends StatelessWidget {
     final primaryColor = isDark ? AppTheme.darkPrimary : AppTheme.primary;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('จับคู่ภาพ')),
+      appBar: AppBar(title: Text(tr('game.memoryMatch.title'))),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -27,7 +28,7 @@ class MemoryMatchGame extends StatelessWidget {
                   size: 80, color: primaryColor.withAlpha(120)),
               const SizedBox(height: 24),
               Text(
-                'เลือกระดับความยาก',
+                tr('game.memoryMatch.chooseDifficulty'),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
@@ -99,7 +100,7 @@ class _MemoryMatchBoardState extends ConsumerState<_MemoryMatchBoard> {
 
     if (gameState.isLoading || gameState.cards.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('จับคู่ภาพ')),
+        appBar: AppBar(title: Text(tr('game.memoryMatch.title'))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -116,7 +117,8 @@ class _MemoryMatchBoardState extends ConsumerState<_MemoryMatchBoard> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('จับคู่ภาพ (${gameState.difficulty.label})'),
+          title: Text(trp('game.memoryMatch.titleWithLevel',
+              {'level': gameState.difficulty.label})),
           leading: IconButton(
             icon: const Icon(Icons.close_rounded),
             onPressed: () async {

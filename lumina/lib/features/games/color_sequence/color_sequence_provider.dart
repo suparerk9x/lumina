@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/strings.dart';
 import '../../../shared/storage/game_score.dart';
 import '../../../shared/storage/storage_service.dart';
 
@@ -11,16 +12,18 @@ import '../../../shared/storage/storage_service.dart';
 
 /// สีที่ใช้ในเกม 4 สี
 enum GameColor {
-  red(Color(0xFFE53935), Color(0xFFFF6F60), 'แดง'),
-  green(Color(0xFF43A047), Color(0xFF76D275), 'เขียว'),
-  blue(Color(0xFF1E88E5), Color(0xFF6AB7FF), 'น้ำเงิน'),
-  yellow(Color(0xFFFDD835), Color(0xFFFFFF6B), 'เหลือง');
+  red(Color(0xFFE53935), Color(0xFFFF6F60), 'game.color.red'),
+  green(Color(0xFF43A047), Color(0xFF76D275), 'game.color.green'),
+  blue(Color(0xFF1E88E5), Color(0xFF6AB7FF), 'game.color.blue'),
+  yellow(Color(0xFFFDD835), Color(0xFFFFFF6B), 'game.color.yellow');
 
-  const GameColor(this.color, this.lightColor, this.label);
+  const GameColor(this.color, this.lightColor, this.labelKey);
 
   final Color color;
   final Color lightColor; // สีตอนกำลัง highlight
-  final String label;
+  final String labelKey;
+
+  String get label => tr(labelKey);
 }
 
 /// เฟสของเกม

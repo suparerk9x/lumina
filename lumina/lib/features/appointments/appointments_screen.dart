@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/services/notification_service.dart';
 import '../../shared/storage/appointment.dart';
@@ -31,17 +32,17 @@ class AppointmentsScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('ลบนัดหมาย?'),
-        content: Text('ต้องการลบ "${a.title}" หรือไม่'),
+        title: Text(tr('appt.deleteTitle')),
+        content: Text(trp('appt.deleteConfirm', {'title': a.title})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
+            child: Text(tr('appt.cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.error),
-            child: const Text('ลบ'),
+            child: Text(tr('appt.delete')),
           ),
         ],
       ),
@@ -57,11 +58,11 @@ class AppointmentsScreen extends ConsumerWidget {
     final now = DateTime.now();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('นัดหมายแพทย์')),
+      appBar: AppBar(title: Text(tr('appt.title'))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(context, ref),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('เพิ่มนัด', style: TextStyle(fontSize: 18)),
+        label: Text(tr('appt.add'), style: const TextStyle(fontSize: 18)),
       ),
       body: items.isEmpty
           ? _EmptyState(onAdd: () => _openEditor(context, ref))
@@ -133,7 +134,11 @@ class _AppointmentCard extends StatelessWidget {
                       Text(appt.title,
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 4),
-                      Text('${formatThaiDate(appt.dateTime)}  $hh:$mm น.',
+                      Text(
+                          trp('appt.dateTimeLine', {
+                            'date': formatThaiDate(appt.dateTime),
+                            'time': '$hh:$mm',
+                          }),
                           style: TextStyle(fontSize: 16, color: secondary)),
                       if (appt.location.isNotEmpty) ...[
                         const SizedBox(height: 2),
@@ -156,7 +161,7 @@ class _AppointmentCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.delete_outline_rounded,
                       color: AppTheme.error),
-                  tooltip: 'ลบ',
+                  tooltip: tr('appt.delete'),
                   onPressed: onDelete,
                 ),
               ],
@@ -187,12 +192,12 @@ class _EmptyState extends StatelessWidget {
                 color: (isDark ? AppTheme.darkPrimary : AppTheme.primary)
                     .withAlpha(120)),
             const SizedBox(height: 24),
-            Text('ยังไม่มีนัดหมาย',
+            Text(tr('appt.emptyTitle'),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(
-              'เพิ่มนัดหมายแพทย์\nแล้วแอปจะเตือนก่อนถึงเวลา',
+              tr('appt.emptyBody'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: isDark
                         ? AppTheme.darkTextSecondary
@@ -206,7 +211,7 @@ class _EmptyState extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('เพิ่มนัดหมายแรก'),
+                label: Text(tr('appt.addFirst')),
               ),
             ),
           ],

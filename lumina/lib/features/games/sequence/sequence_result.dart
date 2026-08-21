@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/strings.dart';
 import '../../../shared/widgets/game_result_screen.dart';
 import 'sequence_game.dart';
 import 'sequence_provider.dart';
@@ -19,13 +20,13 @@ class SequenceResult extends ConsumerWidget {
 
     // ใช้ GameResultScreen แสดงคะแนนพร้อมข้อความตามระดับผลลัพธ์
     return GameResultScreen(
-      title: 'ผลคะแนน',
+      title: tr('game.result.title'),
       score: state.score, // คะแนนที่ได้
       total: state.totalRounds, // คะแนนเต็ม
-      goodSub: 'ทักษะการเรียงลำดับดีเยี่ยม', // ข้อความเมื่อคะแนนดี
-      okSub: 'ทำได้ดี ลองฝึกเพิ่มอีกนิด', // ข้อความเมื่อคะแนนปานกลาง
-      fairSub: 'ค่อย ๆ ฝึก จะดีขึ้นเรื่อย ๆ', // ข้อความเมื่อคะแนนพอใช้
-      lowSub: 'ไม่เป็นไร ลองเล่นอีกครั้ง', // ข้อความเมื่อคะแนนน้อย
+      goodSub: tr('game.sequence.goodSub'), // ข้อความเมื่อคะแนนดี
+      okSub: tr('game.result.okSub'), // ข้อความเมื่อคะแนนปานกลาง
+      fairSub: tr('game.result.fairSub'), // ข้อความเมื่อคะแนนพอใช้
+      lowSub: tr('game.result.lowSub'), // ข้อความเมื่อคะแนนน้อย
       onPlayAgain: () {
         ref.read(sequenceGameProvider.notifier).startGame(); // เริ่มเกมใหม่
         Navigator.of(context).pushReplacement(

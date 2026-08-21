@@ -4,6 +4,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/strings.dart';
+
 /// Service กลางสำหรับการแจ้งเตือนในเครื่อง (local notification)
 /// ใช้ร่วมกับ เตือนนัดหมายแพทย์ (ข้อ 1) และฟีเจอร์อื่นที่ต้องเตือนตามเวลา
 ///
@@ -18,32 +20,29 @@ class NotificationService {
 
   bool _initialized = false;
 
-  /// ช่องแจ้งเตือนนัดหมาย (Android ต้องมี channel)
-  static const AndroidNotificationDetails _appointmentAndroid =
-      AndroidNotificationDetails(
-    'appointments',
-    'การแจ้งเตือนนัดหมาย',
-    channelDescription: 'เตือนก่อนถึงเวลานัดหมายแพทย์',
-    importance: Importance.max,
-    priority: Priority.high,
-  );
-
-  static const NotificationDetails _appointmentDetails = NotificationDetails(
-    android: _appointmentAndroid,
-    iOS: DarwinNotificationDetails(),
-  );
+  /// ช่องแจ้งเตือนนัดหมาย (Android ต้องมี channel) — ชื่อ channel แปลตามภาษา
+  NotificationDetails get _appointmentDetails => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'appointments',
+          tr('notif.channel.apptName'),
+          channelDescription: tr('notif.channel.apptDesc'),
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      );
 
   /// ช่องแจ้งเตือนทั่วไป (เช่น เตือนพักสายตา/ง่วง — ข้อ 6)
-  static const NotificationDetails _alertDetails = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'alerts',
-      'การแจ้งเตือนสุขภาพ',
-      channelDescription: 'เตือนพักสายตา/พักผ่อนเมื่อพบสัญญาณเหนื่อยล้า',
-      importance: Importance.high,
-      priority: Priority.high,
-    ),
-    iOS: DarwinNotificationDetails(),
-  );
+  NotificationDetails get _alertDetails => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'alerts',
+          tr('notif.channel.alertName'),
+          channelDescription: tr('notif.channel.alertDesc'),
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      );
 
   /// เริ่มต้นระบบแจ้งเตือน (เรียกครั้งเดียวตอนเปิดแอปใน main)
   Future<void> init() async {

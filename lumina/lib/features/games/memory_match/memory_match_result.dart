@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/strings.dart';
 import '../../../shared/widgets/game_result_screen.dart';
 import 'memory_match_game.dart';
 import 'memory_match_provider.dart';
@@ -24,17 +25,19 @@ class MemoryMatchResult extends ConsumerWidget {
     final score = difficulty.calculateScore(attempts);
 
     return GameResultScreen(
-      title: 'ผลเกมจับคู่ภาพ',
+      title: tr('game.memoryMatch.resultTitle'),
       score: score,
       total: totalPairs,
-      goodMessage: 'ความจำเยี่ยม! 🎉',
-      okMessage: 'จำได้ดี! 👍',
-      fairMessage: 'พอใช้ ลองอีกครั้ง 💪',
-      lowMessage: 'ค่อย ๆ ฝึกนะ 🙂',
-      goodSub: 'จับคู่ครบ $totalPairs คู่ ใน $attempts ครั้ง — เก่งมาก!',
-      okSub: 'ใช้ $attempts ครั้ง สำหรับ $totalPairs คู่ ลองฝึกเพิ่มจะดีขึ้น',
-      fairSub: 'ใช้ $attempts ครั้ง ค่อย ๆ ฝึกจำตำแหน่ง',
-      lowSub: 'ใช้ $attempts ครั้ง ไม่เป็นไร ลองเล่นอีก',
+      goodMessage: tr('game.memoryMatch.goodMessage'),
+      okMessage: tr('game.memoryMatch.okMessage'),
+      fairMessage: tr('game.memoryMatch.fairMessage'),
+      lowMessage: tr('game.memoryMatch.lowMessage'),
+      goodSub: trp('game.memoryMatch.goodSub',
+          {'pairs': '$totalPairs', 'attempts': '$attempts'}),
+      okSub: trp('game.memoryMatch.okSub',
+          {'attempts': '$attempts', 'pairs': '$totalPairs'}),
+      fairSub: trp('game.memoryMatch.fairSub', {'attempts': '$attempts'}),
+      lowSub: trp('game.memoryMatch.lowSub', {'attempts': '$attempts'}),
       onPlayAgain: () {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => MemoryMatchGame()),

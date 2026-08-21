@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants.dart';
+import '../../core/strings.dart';
 import '../../shared/storage/assessment_result.dart';
 import '../../shared/storage/storage_service.dart';
 import '../../shared/storage/user_profile.dart';
@@ -74,13 +75,15 @@ class AssessmentState {
   /// คะแนนเต็ม = 10 (2 + 5 + 3)
   int get maxScore => 10;
 
-  /// ชื่อแต่ละขั้นตอนที่แสดงบนแถบความคืบหน้า
-  static const List<String> stepTitles = [
-    'วัน/เวลา',
-    'จำคำ 3 คำ',
-    'นับถอยหลัง',
-    'จำคำได้ไหม',
+  /// ชื่อแต่ละขั้นตอนที่แสดงบนแถบความคืบหน้า (แปลตามภาษา)
+  static const List<String> _stepTitleKeys = [
+    'assess.step.dateTime',
+    'assess.step.memorize',
+    'assess.step.countdown',
+    'assess.step.recall',
   ];
+
+  static List<String> get stepTitles => _stepTitleKeys.map(tr).toList();
 
   /// สร้าง state ใหม่โดยเปลี่ยนเฉพาะค่าที่ระบุ (ใช้หลัก immutability)
   AssessmentState copyWith({

@@ -1,9 +1,10 @@
-// ไฟล์นี้เก็บ Map จับคู่ "คำภาษาไทย" กับ "Emoji" ที่แสดงแทนรูปภาพ
+// ไฟล์นี้เก็บ Map จับคู่ "คำ" กับ "Emoji" ที่แสดงแทนรูปภาพ (2 ภาษา)
 // ใช้ในเกมจับคู่เสียง เพื่อแสดง Emoji เป็นตัวเลือกให้ผู้ใช้เลือก
-// ตัวอย่าง: 'บ้าน' -> '🏠', 'แมว' -> '🐱'
+// เลือกชุดคำตามภาษาปัจจุบัน (appLang) — EN default / TH
 
-/// Map ที่จับคู่ทุกคำในกลุ่มคำศัพท์กับ Emoji ที่สื่อความหมาย
-const Map<String, String> wordEmojiMap = {
+import '../../../core/strings.dart';
+
+const Map<String, String> _wordEmojiTh = {
   'บ้าน': '🏠',
   'แมว': '🐱',
   'น้ำ': '💧',
@@ -35,3 +36,40 @@ const Map<String, String> wordEmojiMap = {
   'หน้าต่าง': '🪟',
   'หมวก': '🎩',
 };
+
+const Map<String, String> _wordEmojiEn = {
+  'house': '🏠',
+  'cat': '🐱',
+  'water': '💧',
+  'tree': '🌳',
+  'car': '🚗',
+  'fish': '🐟',
+  'table': '🪵',
+  'star': '⭐',
+  'book': '📚',
+  'banana': '🍌',
+  'chair': '💺',
+  'flower': '🌸',
+  'clock': '⏰',
+  'glass': '🥛',
+  'shoe': '👟',
+  'door': '🚪',
+  'pillow': '🛏️',
+  'rice': '🍚',
+  'sun': '☀️',
+  'plate': '🍽️',
+  'phone': '📱',
+  'fan': '💨',
+  'river': '🌊',
+  'shirt': '👕',
+  'spoon': '🥄',
+  'bicycle': '🚲',
+  'candle': '🕯️',
+  'orange': '🍊',
+  'window': '🪟',
+  'hat': '🎩',
+};
+
+/// Map คำ→Emoji ตามภาษาปัจจุบัน
+Map<String, String> get wordEmojiMap =>
+    appLang == 'th' ? _wordEmojiTh : _wordEmojiEn;

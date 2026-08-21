@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/user_profile.dart';
 import '../profile/profile_provider.dart';
@@ -22,13 +23,13 @@ class FamilyCallScreen extends ConsumerWidget {
       final ok = await launchUrl(uri);
       if (!ok && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('โทรออกไม่สำเร็จ')),
+          SnackBar(content: Text(tr('family.callFailed'))),
         );
       }
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('อุปกรณ์นี้โทรออกไม่ได้')),
+          SnackBar(content: Text(tr('family.callNotSupported'))),
         );
       }
     }
@@ -61,17 +62,17 @@ class FamilyCallScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('ลบรายชื่อ?'),
-        content: Text('ต้องการลบ "$name" ออกจากรายชื่อครอบครัวหรือไม่'),
+        title: Text(tr('family.deleteTitle')),
+        content: Text(trp('family.deleteConfirm', {'name': name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
+            child: Text(tr('family.cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.error),
-            child: const Text('ลบ'),
+            child: Text(tr('family.delete')),
           ),
         ],
       ),
@@ -87,11 +88,11 @@ class FamilyCallScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('โทรหาครอบครัว'),
+        title: Text(tr('family.callTitle')),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_rounded),
-            tooltip: 'เพิ่มสมาชิก',
+            tooltip: tr('family.addMember'),
             onPressed: () => _addContact(context, ref),
           ),
         ],
@@ -168,9 +169,10 @@ class _ContactCard extends StatelessWidget {
                     if (v == 'edit') onEdit();
                     if (v == 'delete') onDelete();
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('แก้ไข')),
-                    PopupMenuItem(value: 'delete', child: Text('ลบ')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'edit', child: Text(tr('family.edit'))),
+                    PopupMenuItem(
+                        value: 'delete', child: Text(tr('family.delete'))),
                   ],
                 ),
               ),
@@ -204,7 +206,7 @@ class _ContactCard extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onCall,
                   icon: const Icon(Icons.phone_rounded, size: 20),
-                  label: const Text('โทร'),
+                  label: Text(tr('family.call')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.success,
                     padding: EdgeInsets.zero,
@@ -239,13 +241,13 @@ class _EmptyState extends StatelessWidget {
                     .withAlpha(120)),
             const SizedBox(height: 24),
             Text(
-              'ยังไม่มีรายชื่อครอบครัว',
+              tr('family.emptyTitle'),
               style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'เพิ่มรูปและเบอร์ของลูกหลาน\nไว้กดโทรได้ง่าย ๆ',
+              tr('family.emptyBody'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: isDark
                         ? AppTheme.darkTextSecondary
@@ -259,7 +261,7 @@ class _EmptyState extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.person_add_rounded),
-                label: const Text('เพิ่มสมาชิกคนแรก'),
+                label: Text(tr('family.addFirstMember')),
               ),
             ),
           ],

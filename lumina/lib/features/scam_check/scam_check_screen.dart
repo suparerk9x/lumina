@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/services/scam_detector.dart';
 
@@ -29,7 +30,7 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
     if (text.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ไม่มีข้อความในคลิปบอร์ด')),
+          SnackBar(content: Text(tr('scam.clipboardEmpty'))),
         );
       }
       return;
@@ -59,12 +60,12 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
         isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ตรวจข้อความหลอกลวง')),
+      appBar: AppBar(title: Text(tr('scam.title'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            'สงสัยว่า SMS หรือข้อความไหนหลอกลวง?\nวางข้อความมาตรวจได้เลย',
+            tr('scam.intro'),
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -75,8 +76,8 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
             controller: _controller,
             maxLines: 6,
             style: const TextStyle(fontSize: 18),
-            decoration: const InputDecoration(
-              hintText: 'วางหรือพิมพ์ข้อความที่นี่…',
+            decoration: InputDecoration(
+              hintText: tr('scam.inputHint'),
               alignLabelWithHint: true,
             ),
           ),
@@ -89,7 +90,7 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _paste,
                     icon: const Icon(Icons.content_paste_rounded),
-                    label: const Text('วางข้อความ'),
+                    label: Text(tr('scam.paste')),
                   ),
                 ),
               ),
@@ -100,7 +101,7 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _check,
                     icon: const Icon(Icons.shield_rounded),
-                    label: const Text('ตรวจสอบ'),
+                    label: Text(tr('scam.check')),
                   ),
                 ),
               ),
@@ -108,7 +109,7 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
           ),
           if (_result != null) ...[
             const SizedBox(height: 8),
-            TextButton(onPressed: _clear, child: const Text('ล้างข้อความ')),
+            TextButton(onPressed: _clear, child: Text(tr('scam.clear'))),
             const SizedBox(height: 8),
             _ResultCard(result: _result!),
           ],
@@ -159,7 +160,7 @@ class _ResultCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ความเสี่ยง',
+                      Text(tr('scam.riskLabel'),
                           style: Theme.of(context).textTheme.bodyMedium),
                       Text(
                         result.risk.label,
@@ -190,7 +191,7 @@ class _ResultCard extends StatelessWidget {
             ),
             if (result.reasons.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text('สิ่งที่ตรวจพบ',
+              Text(tr('scam.detected'),
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               ...result.reasons.map(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 
 /// ไฟล์นี้เป็นฟังก์ชันแสดง dialog ยืนยันก่อนออกจากเกมหรือแบบประเมิน
@@ -8,9 +9,11 @@ import '../../core/theme.dart';
 /// แสดง dialog ถามยืนยันก่อนออก คืนค่า true ถ้าผู้ใช้ยืนยัน, false ถ้ายกเลิก
 Future<bool> showExitConfirmation(
   BuildContext context, {
-  String title = 'ออกจากหน้านี้?',
-  String message = 'ข้อมูลที่ทำไปจะหายหมด',
+  String? title,
+  String? message,
 }) async {
+  final t = title ?? tr('common.exitTitle');
+  final m = message ?? tr('common.exitMessage');
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
@@ -18,11 +21,11 @@ Future<bool> showExitConfirmation(
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       ),
       title: Text(
-        title,
+        t,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22),
       ),
       content: Text(
-        message,
+        m,
         style: const TextStyle(fontSize: 18, color: AppTheme.textSecondary),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -31,7 +34,8 @@ Future<bool> showExitConfirmation(
           height: 48,
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('ทำต่อ', style: TextStyle(fontSize: 18)),
+            child: Text(tr('common.continue'),
+                style: const TextStyle(fontSize: 18)),
           ),
         ),
         SizedBox(
@@ -39,7 +43,8 @@ Future<bool> showExitConfirmation(
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.error),
-            child: const Text('ออก', style: TextStyle(fontSize: 18)),
+            child: Text(tr('common.exit'),
+                style: const TextStyle(fontSize: 18)),
           ),
         ),
       ],

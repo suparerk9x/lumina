@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import '../../shared/storage/assessment_result.dart';
 import '../../shared/storage/game_score.dart';
@@ -43,7 +44,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ประวัติคะแนน')),
+      appBar: AppBar(title: Text(tr('history.title'))),
       body: RefreshIndicator(
         onRefresh: () async => setState(_loadData),
         child: ListView(
@@ -82,12 +83,12 @@ class _AssessmentHistorySection extends StatelessWidget {
       children: [
         _SectionHeader(
           icon: Icons.assignment_rounded,
-          title: 'ผลการประเมินที่ผ่านมา',
+          title: tr('history.pastAssessments'),
         ),
         const SizedBox(height: 12),
         if (assessments.isEmpty)
           _EmptyCard(
-            message: 'ยังไม่มีผลการประเมิน\nกด "ประเมิน" เพื่อเริ่ม',
+            message: tr('history.noAssessments'),
             icon: Icons.assignment_outlined,
           )
         else
@@ -218,7 +219,7 @@ class _GamePerformanceSection extends StatelessWidget {
       children: [
         _SectionHeader(
           icon: Icons.sports_esports_rounded,
-          title: 'คะแนนเกมล่าสุด',
+          title: tr('history.recentGameScores'),
         ),
         const SizedBox(height: 12),
 
@@ -227,7 +228,7 @@ class _GamePerformanceSection extends StatelessWidget {
           children: [
             Expanded(
               child: _MiniStatCard(
-                title: 'จับคู่เสียง',
+                title: tr('history.soundMatch'),
                 emoji: '🔊',
                 avg: _avg(soundScores),
                 total: _avgTotal(soundScores),
@@ -237,7 +238,7 @@ class _GamePerformanceSection extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _MiniStatCard(
-                title: 'เรียงลำดับ',
+                title: tr('history.sequence'),
                 emoji: '🔢',
                 avg: _avg(sequenceScores),
                 total: _avgTotal(sequenceScores),
@@ -251,7 +252,7 @@ class _GamePerformanceSection extends StatelessWidget {
         // Recent game list
         if (soundScores.isEmpty && sequenceScores.isEmpty)
           _EmptyCard(
-            message: 'ยังไม่มีคะแนนเกม\nลองเล่นเกมฝึกสมองดูสิ',
+            message: tr('history.noGameScores'),
             icon: Icons.sports_esports_outlined,
           )
         else
@@ -325,7 +326,7 @@ class _MiniStatCard extends StatelessWidget {
             const SizedBox(height: 8),
             if (isEmpty)
               Text(
-                'ยังไม่มีข้อมูล',
+                tr('history.noData'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                       fontSize: 16,
@@ -341,7 +342,7 @@ class _MiniStatCard extends StatelessWidget {
               ),
             if (!isEmpty)
               Text(
-                'เฉลี่ย 5 ครั้งล่าสุด',
+                tr('history.avgLast5'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
@@ -364,9 +365,9 @@ class _GameScoreRow extends StatelessWidget {
   String _gameLabel() {
     switch (score.gameType) {
       case 'sound_match':
-        return '🔊 จับคู่เสียง';
+        return '🔊 ${tr('history.soundMatch')}';
       case 'sequence':
-        return '🔢 เรียงลำดับ';
+        return '🔢 ${tr('history.sequence')}';
       default:
         return score.gameType;
     }
@@ -467,7 +468,7 @@ class _TrendSection extends StatelessWidget {
       children: [
         _SectionHeader(
           icon: Icons.trending_up_rounded,
-          title: 'แนวโน้ม',
+          title: tr('history.trend'),
         ),
         const SizedBox(height: 12),
         Card(
@@ -483,7 +484,7 @@ class _TrendSection extends StatelessWidget {
                             color: AppTheme.textSecondary.withAlpha(100)),
                         const SizedBox(height: 8),
                         Text(
-                          'ทำแบบประเมินเพื่อดูแนวโน้ม',
+                          tr('history.doAssessmentForTrend'),
                           style: Theme.of(context)
                               .textTheme
                               .bodyLarge
@@ -505,7 +506,7 @@ class _TrendSection extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'สัปดาห์นี้คุณทำแบบประเมิน $thisWeek ครั้ง',
+                              trp('history.thisWeekCount', {'n': '$thisWeek'}),
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyLarge
@@ -557,7 +558,7 @@ class _TrendSection extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: Text(
-                            'ทำแบบประเมินอย่างน้อย 3 ครั้งเพื่อดูแนวโน้ม',
+                            tr('history.needThreeForTrend'),
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -580,9 +581,9 @@ class _TrendSection extends StatelessWidget {
   /// ถ้าดีขึ้น 5% = ลูกศรขึ้น, แย่ลง 5% = ลูกศรลง, อื่น ๆ = คงที่
   _Trend _computeTrend() {
     if (assessments.length < 3) {
-      return const _Trend(
+      return _Trend(
         arrow: '→',
-        label: 'ยังไม่มีข้อมูลเพียงพอ',
+        label: tr('history.trendNotEnough'),
         color: AppTheme.textSecondary,
       );
     }
@@ -602,21 +603,21 @@ class _TrendSection extends StatelessWidget {
 
       final diff = recentAvg - prevAvg;
       if (diff > 0.05) {
-        return const _Trend(
+        return _Trend(
           arrow: '↑',
-          label: 'ดีขึ้น! สมองแข็งแรง',
+          label: tr('history.trendImproved'),
           color: AppTheme.success,
         );
       } else if (diff < -0.05) {
-        return const _Trend(
+        return _Trend(
           arrow: '↓',
-          label: 'ควรฝึกเพิ่ม',
+          label: tr('history.trendPracticeMore'),
           color: AppTheme.error,
         );
       } else {
-        return const _Trend(
+        return _Trend(
           arrow: '→',
-          label: 'คงที่ ทำได้ดีอยู่',
+          label: tr('history.trendSteady'),
           color: AppTheme.warning,
         );
       }
@@ -624,21 +625,21 @@ class _TrendSection extends StatelessWidget {
 
     // Only 3–5 results, evaluate by absolute score
     if (recentAvg >= 0.7) {
-      return const _Trend(
+      return _Trend(
         arrow: '↑',
-        label: 'เริ่มต้นดี สมองแข็งแรง',
+        label: tr('history.trendGoodStart'),
         color: AppTheme.success,
       );
     } else if (recentAvg >= 0.4) {
-      return const _Trend(
+      return _Trend(
         arrow: '→',
-        label: 'กำลังพัฒนา ฝึกต่อไป',
+        label: tr('history.trendDeveloping'),
         color: AppTheme.warning,
       );
     } else {
-      return const _Trend(
+      return _Trend(
         arrow: '↓',
-        label: 'ควรฝึกสมองเพิ่มเติม',
+        label: tr('history.trendShouldPractice'),
         color: AppTheme.error,
       );
     }

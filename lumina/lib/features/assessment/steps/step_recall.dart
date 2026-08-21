@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../assessment_state.dart';
 
@@ -32,13 +33,13 @@ class StepRecall extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'จำคำได้ไหม?',
+            tr('assess.recallTitle'),
             style: Theme.of(context).textTheme.headlineMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'เลือกคำที่คุณเห็นก่อนหน้านี้',
+            tr('assess.recallSubtitle'),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
@@ -52,7 +53,7 @@ class StepRecall extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'เลือกได้ $pickLimit คำ',
+              trp('assess.pickCount', {'count': '$pickLimit'}),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.warning,
                     fontWeight: FontWeight.w600,
@@ -75,7 +76,8 @@ class StepRecall extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'เลือกได้ $pickLimit คำเท่านั้น กดเอาออกก่อนเลือกใหม่',
+                          trp('assess.pickLimitReached',
+                              {'count': '$pickLimit'}),
                           style: const TextStyle(fontSize: 18),
                         ),
                         backgroundColor: AppTheme.warning,
@@ -104,8 +106,11 @@ class StepRecall extends ConsumerWidget {
                 : null,
             child: Text(
               selected.isEmpty
-                  ? 'เลือกคำที่จำได้'
-                  : 'ยืนยันคำตอบ (${selected.length}/$pickLimit)',
+                  ? tr('assess.selectRememberedWords')
+                  : trp('assess.confirmAnswer', {
+                      'selected': '${selected.length}',
+                      'total': '$pickLimit',
+                    }),
             ),
           ),
         ],

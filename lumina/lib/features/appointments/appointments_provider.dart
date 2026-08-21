@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../shared/services/notification_service.dart';
 import '../../shared/storage/appointment.dart';
 import '../../shared/storage/storage_service.dart';
@@ -20,14 +21,16 @@ class AppointmentsNotifier extends Notifier<List<Appointment>> {
     final t = a.dateTime;
     final hh = t.hour.toString().padLeft(2, '0');
     final mm = t.minute.toString().padLeft(2, '0');
-    final place = a.location.isNotEmpty ? ' ที่ ${a.location}' : '';
-    return 'วันนี้เวลา $hh:$mm น.$place';
+    final place = a.location.isNotEmpty
+        ? trp('notif.appointmentPlace', {'place': a.location})
+        : '';
+    return trp('notif.appointmentBody', {'time': '$hh:$mm', 'place': place});
   }
 
   Future<void> _scheduleFor(Appointment a) async {
     await NotificationService().schedule(
       id: a.id,
-      title: 'นัดหมาย: ${a.title}',
+      title: trp('notif.appointmentTitle', {'title': a.title}),
       body: _reminderText(a),
       dateTime: a.reminderTime,
     );

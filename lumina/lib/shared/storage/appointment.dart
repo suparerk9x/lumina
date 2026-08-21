@@ -1,18 +1,22 @@
 // โมเดลข้อมูลนัดหมายแพทย์ (ข้อ 1)
 // เก็บหัวข้อ วันเวลา สถานที่ และช่วงเวลาที่ต้องการให้เตือนล่วงหน้า
 
+import '../../core/strings.dart';
+
 /// ตัวเลือกเตือนล่วงหน้า (นาทีก่อนถึงเวลานัด)
 enum ReminderLead {
-  atTime(0, 'ตอนถึงเวลา'),
-  min30(30, 'ก่อน 30 นาที'),
-  hour1(60, 'ก่อน 1 ชั่วโมง'),
-  hour3(180, 'ก่อน 3 ชั่วโมง'),
-  day1(1440, 'ก่อน 1 วัน');
+  atTime(0, 'reminder.atTime'),
+  min30(30, 'reminder.min30'),
+  hour1(60, 'reminder.hour1'),
+  hour3(180, 'reminder.hour3'),
+  day1(1440, 'reminder.day1');
 
-  const ReminderLead(this.minutes, this.label);
+  const ReminderLead(this.minutes, this.labelKey);
 
   final int minutes;
-  final String label;
+  final String labelKey;
+
+  String get label => tr(labelKey);
 
   static ReminderLead fromMinutes(int m) {
     return ReminderLead.values.firstWhere(

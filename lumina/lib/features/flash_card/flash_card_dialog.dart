@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import 'flash_card_service.dart';
 
@@ -54,7 +55,7 @@ class _FlashCardDialogState extends State<_FlashCardDialog> {
               children: [
                 Icon(Icons.style_rounded, color: primary, size: 26),
                 const SizedBox(width: 8),
-                Text('การ์ดวันนี้',
+                Text(tr('flash.todayCard'),
                     style: Theme.of(context).textTheme.titleMedium),
               ],
             ),
@@ -105,12 +106,12 @@ class _FlashCardDialogState extends State<_FlashCardDialog> {
                   height: 52,
                   child: OutlinedButton(
                     onPressed: () => setState(() => _revealed = true),
-                    child: const Text('เฉลย'),
+                    child: Text(tr('flash.reveal')),
                   ),
                 ),
             ] else
               Text(
-                'ลองตอบในใจดูนะ',
+                tr('flash.answerInMind'),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: isDark
                           ? AppTheme.darkTextSecondary
@@ -125,7 +126,7 @@ class _FlashCardDialogState extends State<_FlashCardDialog> {
               height: 52,
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('ปิด'),
+                child: Text(tr('flash.close')),
               ),
             ),
           ],

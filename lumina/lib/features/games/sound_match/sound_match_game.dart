@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import '../../../../core/strings.dart';
 import '../../../core/theme.dart';
 import '../../../shared/widgets/exit_dialog.dart';
 import 'sound_match_provider.dart';
@@ -46,7 +47,7 @@ class _WebStartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('จับคู่เสียง'),
+        title: Text(tr('game.soundMatch.title')),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -62,13 +63,13 @@ class _WebStartScreen extends StatelessWidget {
                   size: 80, color: AppTheme.primary),
               const SizedBox(height: 24),
               Text(
-                'เกมจับคู่เสียง',
+                tr('game.soundMatch.startHeading'),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'ฟังเสียงคำศัพท์ แล้วเลือกรูปที่ตรงกัน',
+                tr('game.soundMatch.startDesc'),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -76,7 +77,7 @@ class _WebStartScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'เปิดลำโพงให้พร้อม 🔊',
+                tr('game.soundMatch.readySpeaker'),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.primary,
                       fontWeight: FontWeight.w600,
@@ -93,7 +94,7 @@ class _WebStartScreen extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                label: const Text('เริ่มเล่น'),
+                label: Text(tr('game.soundMatch.startButton')),
               ),
             ],
           ),
@@ -141,43 +142,48 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
   Future<void> _initTts() async {
     _tts = FlutterTts();
 
+    // เลือกภาษาเสียงตามภาษาแอป (ไทย / อังกฤษ)
+    final isThai = appLang == 'th';
+    final ttsLocale = isThai ? 'th-TH' : 'en-US';
+    final localePrefix = isThai ? 'th' : 'en';
+
     try {
       await _tts.setVolume(1.0); // ตั้งความดังเต็ม
       await _tts.setPitch(1.0); // ตั้งระดับเสียงปกติ
 
       if (kIsWeb) {
-        // บนเว็บ ต้องค้นหาและตั้งค่าเสียงภาษาไทยด้วยตนเอง
+        // บนเว็บ ต้องค้นหาและตั้งค่าเสียงตามภาษาด้วยตนเอง
         // รอสักครู่ให้เบราว์เซอร์โหลดรายการเสียง
         await Future.delayed(const Duration(milliseconds: 500));
 
         final voices = await _tts.getVoices as List<dynamic>?;
         if (voices != null) {
-          // ค้นหาเสียงภาษาไทยจากรายการเสียงทั้งหมดของเบราว์เซอร์
-          Map<dynamic, dynamic>? thaiVoice;
+          // ค้นหาเสียงที่ตรงภาษาจากรายการเสียงทั้งหมดของเบราว์เซอร์
+          Map<dynamic, dynamic>? matchVoice;
           for (final v in voices) {
             final map = v as Map;
             final locale = (map['locale'] ?? map['lang'] ?? '') as String;
-            if (locale.startsWith('th')) {
-              thaiVoice = map;
+            if (locale.startsWith(localePrefix)) {
+              matchVoice = map;
               break;
             }
           }
 
-          if (thaiVoice != null) {
-            final voiceName = thaiVoice['name'] as String;
-            await _tts.setVoice({'name': voiceName, 'locale': 'th-TH'});
-            developer.log('Thai voice set: $voiceName', name: 'DemenishAI');
+          if (matchVoice != null) {
+            final voiceName = matchVoice['name'] as String;
+            await _tts.setVoice({'name': voiceName, 'locale': ttsLocale});
+            developer.log('Voice set: $voiceName', name: 'DemenishAI');
           } else {
-            // ไม่เจอเสียงไทย — ใช้ setLanguage เป็นทางเลือกสำรอง
-            await _tts.setLanguage('th-TH');
-            developer.log('No Thai voice found, using setLanguage fallback',
+            // ไม่เจอเสียงตรงภาษา — ใช้ setLanguage เป็นทางเลือกสำรอง
+            await _tts.setLanguage(ttsLocale);
+            developer.log('No matching voice, using setLanguage fallback',
                 name: 'DemenishAI');
           }
         }
         await _tts.setSpeechRate(0.8);
       } else {
         // มือถือ: setLanguage ทำงานได้ปกติ
-        await _tts.setLanguage('th-TH');
+        await _tts.setLanguage(ttsLocale);
         await _tts.setSpeechRate(0.4); // พูดช้าลงให้ฟังชัด
       }
     } catch (e) {
@@ -250,12 +256,12 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('จับคู่เสียง'),
+        title: Text(tr('game.soundMatch.title')),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () async {
             final exit = await showExitConfirmation(context,
-                title: 'ออกจากเกม?', message: 'คะแนนจะไม่ถูกบันทึก');
+                title: tr('game.exit.title'), message: tr('game.exit.message'));
             if (exit && context.mounted) Navigator.of(context).pop();
           },
         ),
@@ -279,7 +285,7 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
               _SpeakerButton(onTap: () => _speak(round.correctWord)),
               const SizedBox(height: 8),
               Text(
-                'แตะรูปที่ตรงกับเสียง',
+                tr('game.soundMatch.tapImage'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -296,7 +302,8 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '💡 "${round.correctWord}"',
+                      trp('game.soundMatch.hintWord',
+                          {'word': round.correctWord}),
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
@@ -312,7 +319,7 @@ class _SoundMatchGameInnerState extends ConsumerState<_SoundMatchGameInner> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
                   child: Text(
-                    'ไม่ได้ยิน? แสดงคำ',
+                    tr('game.soundMatch.showWord'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -423,7 +430,7 @@ class _ScoreBar extends StatelessWidget {
           ),
         ),
         Text(
-          'ข้อ ${current + 1}',
+          trp('game.itemNumber', {'n': '${current + 1}'}),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.textSecondary,
                 fontSize: 16,
@@ -452,16 +459,16 @@ class _SpeakerButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
-        child: const SizedBox(
+        child: SizedBox(
           width: 80,
           height: 80,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.volume_up_rounded, color: Colors.white, size: 36),
+              const Icon(Icons.volume_up_rounded, color: Colors.white, size: 36),
               Text(
-                'ฟังอีกครั้ง',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+                tr('game.soundMatch.listenAgain'),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ],
           ),

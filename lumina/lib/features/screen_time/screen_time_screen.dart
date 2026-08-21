@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/strings.dart';
 import '../../core/theme.dart';
 import 'screen_time_provider.dart';
 
@@ -34,7 +35,7 @@ class _ScreenTimeScreenState extends ConsumerState<ScreenTimeScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('จำกัดเวลาหน้าจอ')),
+      appBar: AppBar(title: Text(tr('screen.title'))),
       body: const SingleChildScrollView(
         child: Column(
           children: [
@@ -58,14 +59,14 @@ class _ScreenTimeScreenState extends ConsumerState<ScreenTimeScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: const Icon(Icons.warning_rounded, color: AppTheme.error, size: 48),
-        title: const Text(
-          'ใช้เกินเวลาแล้ว!',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          tr('screen.overLimitTitle'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'ถึงเวลาพักสายตาแล้วนะคะ\nลองออกไปเดินเล่น หรือดื่มน้ำสักแก้ว',
+        content: Text(
+          tr('screen.overLimitMessage'),
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, color: AppTheme.textSecondary),
+          style: const TextStyle(fontSize: 18, color: AppTheme.textSecondary),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
@@ -78,11 +79,11 @@ class _ScreenTimeScreenState extends ConsumerState<ScreenTimeScreen> {
               backgroundColor: AppTheme.error,
               minimumSize: const Size(200, 52),
             ),
-            child: const Text('หยุดจับเวลา'),
+            child: Text(tr('screen.stopTimer')),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('รับทราบ ใช้ต่อ'),
+            child: Text(tr('screen.acknowledgeContinue')),
           ),
         ],
       ),
@@ -145,7 +146,9 @@ class _TodayUsageSection extends ConsumerWidget {
                           ),
                     ),
                     Text(
-                      state.isTracking ? 'กำลังจับเวลา...' : 'ใช้ไปแล้ว',
+                      state.isTracking
+                          ? tr('screen.tracking')
+                          : tr('screen.used'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: state.isTracking
                                 ? AppTheme.success
@@ -161,7 +164,7 @@ class _TodayUsageSection extends ConsumerWidget {
 
           // Limit label
           Text(
-            'จำกัดวันละ ${state.limitFormatted}',
+            trp('screen.dailyLimitLabel', {'limit': state.limitFormatted}),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
@@ -185,7 +188,7 @@ class _TodayUsageSection extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'ใช้เกินเวลาที่กำหนดแล้ว ควรพักสายตา',
+                      tr('screen.overLimitWarning'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.error,
                             fontWeight: FontWeight.w600,
@@ -208,7 +211,7 @@ class _TodayUsageSection extends ConsumerWidget {
                       ref.read(screenTimeProvider.notifier).stopTracking();
                     },
                     icon: const Icon(Icons.stop_rounded, size: 24),
-                    label: const Text('หยุดจับเวลา'),
+                    label: Text(tr('screen.stopTimer')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.error,
                       side: const BorderSide(color: AppTheme.error, width: 1.5),
@@ -219,7 +222,7 @@ class _TodayUsageSection extends ConsumerWidget {
                       ref.read(screenTimeProvider.notifier).startTracking();
                     },
                     icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                    label: const Text('เริ่มจับเวลา'),
+                    label: Text(tr('screen.startTimer')),
                   ),
           ),
 
@@ -231,7 +234,7 @@ class _TodayUsageSection extends ConsumerWidget {
                 ref.read(screenTimeProvider.notifier).resetTodayUsage();
               },
               child: Text(
-                'รีเซ็ตเวลาวันนี้',
+                tr('screen.resetToday'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -295,7 +298,8 @@ class _DailyLimitSectionState extends ConsumerState<_DailyLimitSection> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('บันทึกแล้ว: จำกัด $h ชั่วโมง $m นาที/วัน',
+        content: Text(
+            trp('screen.limitSaved', {'h': '$h', 'm': '$m'}),
             style: const TextStyle(fontSize: 18)),
         backgroundColor: AppTheme.success,
         behavior: SnackBarBehavior.floating,
@@ -327,7 +331,7 @@ class _DailyLimitSectionState extends ConsumerState<_DailyLimitSection> {
                         color: AppTheme.primary, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text('ตั้งเวลาจำกัด',
+                  Text(tr('screen.setLimit'),
                       style: Theme.of(context).textTheme.titleMedium),
                 ],
               ),
@@ -341,7 +345,7 @@ class _DailyLimitSectionState extends ConsumerState<_DailyLimitSection> {
                         controller: _hourController,
                         itemCount: _hours.length,
                         labelBuilder: (i) => '${_hours[i]}',
-                        suffix: 'ชั่วโมง',
+                        suffix: tr('screen.hours'),
                       ),
                     ),
                     Padding(
@@ -358,7 +362,7 @@ class _DailyLimitSectionState extends ConsumerState<_DailyLimitSection> {
                         itemCount: _minutes.length,
                         labelBuilder: (i) =>
                             _minutes[i].toString().padLeft(2, '0'),
-                        suffix: 'นาที',
+                        suffix: tr('screen.minutes'),
                       ),
                     ),
                   ],
@@ -370,7 +374,7 @@ class _DailyLimitSectionState extends ConsumerState<_DailyLimitSection> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _saveLimit,
-                  child: const Text('บันทึกเวลา'),
+                  child: Text(tr('screen.saveLimit')),
                 ),
               ),
             ],
@@ -481,7 +485,7 @@ class _WeekHistorySection extends ConsumerWidget {
                         color: AppTheme.primary, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text('สรุปสัปดาห์นี้',
+                  Text(tr('screen.weekSummary'),
                       style: Theme.of(context).textTheme.titleMedium),
                 ],
               ),
@@ -491,7 +495,7 @@ class _WeekHistorySection extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Text(
-                      'ยังไม่มีข้อมูลสัปดาห์นี้\nกด "เริ่มจับเวลา" เพื่อเริ่มบันทึก',
+                      tr('screen.noWeekData'),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.textSecondary,
@@ -530,7 +534,15 @@ class _WeekBarChartPainter extends CustomPainter {
   final Duration limit;
 
   // ชื่อย่อวันในสัปดาห์ภาษาไทย
-  static const _dayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+  static final _dayLabels = [
+    tr('screen.dayMon'),
+    tr('screen.dayTue'),
+    tr('screen.dayWed'),
+    tr('screen.dayThu'),
+    tr('screen.dayFri'),
+    tr('screen.daySat'),
+    tr('screen.daySun'),
+  ];
 
   @override
   void paint(Canvas canvas, Size size) {
