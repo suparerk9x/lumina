@@ -2,7 +2,12 @@ name = "demenish-line"
 main = "src/index.js"
 compatibility_date = "2024-11-01"
 
-# KV เก็บ userId ผู้ติดตาม LINE OA (id เติมโดยสคริปต์ deploy)
+# KV เก็บ userId ผู้ติดตาม LINE OA (เฟส 0) + ผู้ส่งข้อความล่าสุด (ใช้ตอนเทสต์)
 [[kv_namespaces]]
 binding = "USERS"
 id = "74f87a36bbe64796b73af7fcdb9295ca"
+
+# KV เก็บข้อมูล multi-tenant (households/caregivers/invites/events) — เฟส 1
+[[kv_namespaces]]
+binding = "DEMENISH"
+id = "69602e397fdf46c1a7460a6b7a7a6a24"

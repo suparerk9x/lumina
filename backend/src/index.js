@@ -1,151 +1,296 @@
 /**
- * Demenish AI — LINE push proxy (Cloudflare Worker)
- * ข้อ 6: แจ้งเตือนอาการง่วงไปยัง LINE ของครอบครัว
+ * Demenish AI — Worker (multi-tenant, เฟส 1) + phase-0 broadcast (back-compat)
  *
- * 2 endpoint:
- *   POST /webhook  — LINE เรียกเมื่อมีคนแอด OA/ส่งข้อความ → ตอบกลับ userId
- *                    (เพื่อให้ผู้ใช้เอา userId ไปกรอกในแอป) + เก็บลง KV
- *   POST /push     — แอปเรียกเพื่อส่งข้อความ (auth ด้วย header x-app-key)
+ * Storage: KV "DEMENISH" (D1 เต็มโควตาบัญชี จึงใช้ KV)
+ *   hh:{hid}          → { name, seniorName, createdAt }
+ *   cg:{hid}:{userId} → { displayName, role, quietStart, quietEnd, createdAt }
+ *   inv:{token}       → { hid, createdAt }   (TTL 7 วัน)
+ *   ev:{hid}:{id}     → { type, severity, message, ts, ackBy }  (TTL 30 วัน)
  *
- * Secrets ที่ต้องตั้ง (wrangler secret put ...):
- *   CHANNEL_SECRET         — LINE channel secret (ใช้ verify webhook)
- *   CHANNEL_ACCESS_TOKEN   — LINE channel access token (ใช้ push/reply)
- *   APP_KEY                — คีย์ลับที่แชร์กับแอป (กันคนอื่นยิง push)
- * Binding (ไม่บังคับ): KV namespace ชื่อ USERS สำหรับเก็บรายชื่อผู้ติดตาม
+ * Auth: device JWT (HS256, secret=JWT_SECRET) — payload { hid, did, iat }
+ *
+ * Endpoints:
+ *   POST /device/register  {householdName,seniorName}      → { deviceToken, householdId }
+ *   POST /invite           (Bearer JWT)                    → { inviteToken, liffUrl }
+ *   POST /join             {token,userId,displayName}      → { ok, householdName }
+ *   POST /alert            (Bearer JWT) {type,severity,message} → { pushed, eventId }
+ *   GET  /household        (Bearer JWT)                    → { householdName, caregivers[] }
+ *   POST /webhook          (LINE)  ← ปุ่มรับทราบ (postback) + reply userId (เทสต์)
+ *   POST /broadcast        (x-app-key)  ← เฟส 0 (OA เดียว)
+ *   POST /push             (x-app-key)  ← เฟส 0
+ *
+ * Secrets: CHANNEL_SECRET, CHANNEL_ACCESS_TOKEN, APP_KEY, JWT_SECRET
+ * Vars (ไม่บังคับ): LIFF_ID
  */
 
 const LINE_API = 'https://api.line.me/v2/bot/message';
+const LINE_PROFILE = 'https://api.line.me/v2/bot/profile';
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method === 'POST' && url.pathname === '/webhook') {
-      return handleWebhook(request, env);
+    const p = url.pathname;
+    const m = request.method;
+    try {
+      if (m === 'POST' && p === '/device/register') return registerDevice(request, env);
+      if (m === 'POST' && p === '/invite') return withAuth(request, env, (pl) => createInvite(pl, env));
+      if (m === 'POST' && p === '/join') return joinHousehold(request, env);
+      if (m === 'POST' && p === '/alert') return withAuth(request, env, (pl) => sendAlert(pl, request, env));
+      if (m === 'GET' && p === '/household') return withAuth(request, env, (pl) => listHousehold(pl, env));
+      if (m === 'POST' && p === '/webhook') return handleWebhook(request, env);
+      if (m === 'POST' && p === '/broadcast') return handleBroadcast(request, env);
+      if (m === 'POST' && p === '/push') return handlePush(request, env);
+      return new Response('Demenish AI worker (multi-tenant) is running', { status: 200 });
+    } catch (e) {
+      return new Response('error: ' + e.message, { status: 500 });
     }
-    if (request.method === 'POST' && url.pathname === '/push') {
-      return handlePush(request, env);
-    }
-    if (request.method === 'POST' && url.pathname === '/broadcast') {
-      return handleBroadcast(request, env);
-    }
-    return new Response('Demenish AI LINE worker is running', { status: 200 });
   },
 };
 
-// ── /webhook : รับ event จาก LINE ───────────────────────────────
+// ─── helpers: response / KV ───────────────────────────────────
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  });
+}
+async function getJson(env, key) {
+  const v = await env.DEMENISH.get(key);
+  return v ? JSON.parse(v) : null;
+}
+async function putJson(env, key, obj, ttl) {
+  await env.DEMENISH.put(key, JSON.stringify(obj), ttl ? { expirationTtl: ttl } : undefined);
+}
+
+// ─── JWT (HS256) ──────────────────────────────────────────────
+function b64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlStr(str) {
+  return b64url(new TextEncoder().encode(str));
+}
+function b64urlToStr(b) {
+  let s = b.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  return atob(s);
+}
+async function hmacRaw(secret, data) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+}
+async function signJwt(payload, secret) {
+  const h = b64urlStr(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const p = b64urlStr(JSON.stringify(payload));
+  const s = b64url(await hmacRaw(secret, `${h}.${p}`));
+  return `${h}.${p}.${s}`;
+}
+async function verifyJwt(token, secret) {
+  try {
+    const [h, p, s] = token.split('.');
+    if (!h || !p || !s) return null;
+    const expected = b64url(await hmacRaw(secret, `${h}.${p}`));
+    if (expected !== s) return null;
+    return JSON.parse(b64urlToStr(p));
+  } catch {
+    return null;
+  }
+}
+async function withAuth(request, env, fn) {
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer /, '');
+  const payload = await verifyJwt(token, env.JWT_SECRET);
+  if (!payload) return json({ error: 'unauthorized' }, 401);
+  return fn(payload);
+}
+
+// ─── multi-tenant handlers ────────────────────────────────────
+async function registerDevice(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const householdName = String(body.householdName || 'บ้านของฉัน').slice(0, 60);
+  const seniorName = String(body.seniorName || '').slice(0, 60);
+  const hid = crypto.randomUUID();
+  const did = crypto.randomUUID();
+  await putJson(env, `hh:${hid}`, { name: householdName, seniorName, createdAt: Date.now() });
+  const deviceToken = await signJwt({ hid, did, iat: Date.now() }, env.JWT_SECRET);
+  return json({ deviceToken, householdId: hid });
+}
+
+async function createInvite(payload, env) {
+  const token = crypto.randomUUID().replace(/-/g, '');
+  await putJson(env, `inv:${token}`, { hid: payload.hid, createdAt: Date.now() }, 60 * 60 * 24 * 7);
+  const liffId = env.LIFF_ID || '';
+  const liffUrl = liffId ? `https://liff.line.me/${liffId}?token=${token}` : null;
+  return json({ inviteToken: token, liffUrl, expiresInDays: 7 });
+}
+
+async function joinHousehold(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const { token, userId, displayName } = body || {};
+  if (!token || !userId) return json({ error: 'missing token/userId' }, 400);
+  const inv = await getJson(env, `inv:${token}`);
+  if (!inv) return json({ error: 'invite invalid or expired' }, 404);
+  await putJson(env, `cg:${inv.hid}:${userId}`, {
+    displayName: displayName || '', role: 'member', createdAt: Date.now(),
+  });
+  const hh = await getJson(env, `hh:${inv.hid}`);
+  return json({ ok: true, householdName: hh ? hh.name : '' });
+}
+
+function inQuietHours(cg) {
+  if (cg.quietStart == null || cg.quietEnd == null) return false;
+  const h = (new Date().getUTCHours() + 7) % 24; // Asia/Bangkok
+  const s = cg.quietStart, e = cg.quietEnd;
+  return s <= e ? (h >= s && h < e) : (h >= s || h < e);
+}
+
+async function sendAlert(payload, request, env) {
+  const hid = payload.hid;
+  const body = await request.json().catch(() => ({}));
+  const type = body.type || 'alert';
+  const severity = body.severity || 'info';
+  const message = body.message;
+  if (!message) return json({ error: 'missing message' }, 400);
+
+  const eventId = crypto.randomUUID();
+  const list = await env.DEMENISH.list({ prefix: `cg:${hid}:` });
+  let pushed = 0;
+  for (const k of list.keys) {
+    const cg = await getJson(env, k.name);
+    if (!cg) continue;
+    if (severity !== 'urgent' && inQuietHours(cg)) continue;
+    const userId = k.name.split(':')[2];
+    const r = await linePush(env, userId, message, `ack:${hid}:${eventId}`);
+    if (r.ok) pushed++;
+  }
+  await putJson(env, `ev:${hid}:${eventId}`,
+    { type, severity, message, ts: Date.now(), ackBy: null }, 60 * 60 * 24 * 30);
+  return json({ ok: true, pushed, eventId });
+}
+
+async function listHousehold(payload, env) {
+  const hid = payload.hid;
+  const hh = await getJson(env, `hh:${hid}`);
+  const list = await env.DEMENISH.list({ prefix: `cg:${hid}:` });
+  const caregivers = [];
+  for (const k of list.keys) {
+    const cg = await getJson(env, k.name);
+    caregivers.push({
+      userId: k.name.split(':')[2],
+      displayName: cg ? cg.displayName : '',
+      role: cg ? cg.role : 'member',
+    });
+  }
+  return json({ householdName: hh ? hh.name : '', caregivers });
+}
+
+// ─── LINE helpers ─────────────────────────────────────────────
+async function linePush(env, to, message, ackData) {
+  const msg = ackData
+    ? {
+        type: 'template',
+        altText: message.slice(0, 400),
+        template: {
+          type: 'buttons',
+          text: message.slice(0, 160),
+          actions: [{
+            type: 'postback',
+            label: 'รับทราบ / กำลังไปดู',
+            data: ackData,
+            displayText: 'รับทราบแล้ว',
+          }],
+        },
+      }
+    : { type: 'text', text: message };
+  return fetch(`${LINE_API}/push`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${env.CHANNEL_ACCESS_TOKEN}` },
+    body: JSON.stringify({ to, messages: [msg] }),
+  });
+}
+async function lineReply(accessToken, replyToken, text) {
+  await fetch(`${LINE_API}/reply`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ replyToken, messages: [{ type: 'text', text }] }),
+  });
+}
+async function getProfile(env, userId) {
+  try {
+    const r = await fetch(`${LINE_PROFILE}/${userId}`, {
+      headers: { authorization: `Bearer ${env.CHANNEL_ACCESS_TOKEN}` },
+    });
+    if (r.ok) return r.json();
+  } catch {}
+  return null;
+}
+
+// ─── /webhook ─────────────────────────────────────────────────
 async function handleWebhook(request, env) {
   const body = await request.text();
-
-  // ตรวจลายเซ็นว่ามาจาก LINE จริง
   const signature = request.headers.get('x-line-signature') || '';
-  const valid = await verifySignature(env.CHANNEL_SECRET, body, signature);
-  if (!valid) return new Response('bad signature', { status: 401 });
-
+  if (!(await verifySignature(env.CHANNEL_SECRET, body, signature))) {
+    return new Response('bad signature', { status: 401 });
+  }
   const data = JSON.parse(body);
-  const events = data.events || [];
-  for (const ev of events) {
+  for (const ev of data.events || []) {
     const userId = ev.source && ev.source.userId;
-    if (!userId) continue;
 
-    // เก็บ userId ลง KV (ถ้าผูก namespace USERS ไว้)
-    if (env.USERS) {
-      await env.USERS.put(userId, new Date().toISOString());
+    // ปุ่มรับทราบ (postback)
+    if (ev.type === 'postback' && ev.postback && ev.postback.data && ev.postback.data.startsWith('ack:')) {
+      const parts = ev.postback.data.split(':');
+      const key = `ev:${parts[1]}:${parts[2]}`;
+      const e = await getJson(env, key);
+      if (e && !e.ackBy) {
+        e.ackBy = userId;
+        await putJson(env, key, e, 60 * 60 * 24 * 30);
+      }
+      if (ev.replyToken) await lineReply(env.CHANNEL_ACCESS_TOKEN, ev.replyToken, 'รับทราบแล้ว ขอบคุณที่ดูแลกันนะ');
+      continue;
     }
 
-    // ตอบกลับ userId ให้ผู้ใช้เอาไปกรอกในแอป
-    if ((ev.type === 'follow' || ev.type === 'message') && ev.replyToken) {
-      const text =
-        'LINE User ID ของคุณคือ:\n' +
-        userId +
-        '\n\nนำรหัสนี้ไปกรอกในแอป Demenish AI (หน้าแก้ไขสมาชิกครอบครัว) ' +
-        'เพื่อรับแจ้งเตือน';
-      await lineReply(env.CHANNEL_ACCESS_TOKEN, ev.replyToken, text);
+    // follow/message: เก็บ userId (เทสต์/fallback) + ตอบ userId
+    if ((ev.type === 'follow' || ev.type === 'message') && userId) {
+      const prof = await getProfile(env, userId);
+      if (env.USERS) await env.USERS.put(userId, (prof && prof.displayName) || '');
+      if (ev.replyToken) {
+        await lineReply(env.CHANNEL_ACCESS_TOKEN, ev.replyToken,
+          'LINE User ID ของคุณคือ:\n' + userId);
+      }
     }
   }
   return new Response('ok', { status: 200 });
 }
 
-// ── /push : แอปเรียกเพื่อส่งข้อความหา LINE ───────────────────────
-async function handlePush(request, env) {
-  if (request.headers.get('x-app-key') !== env.APP_KEY) {
-    return new Response('unauthorized', { status: 401 });
-  }
-  let payload;
-  try {
-    payload = await request.json();
-  } catch {
-    return new Response('bad json', { status: 400 });
-  }
-  const { to, message } = payload || {};
-  if (!to || !message) return new Response('missing to/message', { status: 400 });
-
-  const resp = await fetch(`${LINE_API}/push`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${env.CHANNEL_ACCESS_TOKEN}`,
-    },
-    body: JSON.stringify({ to, messages: [{ type: 'text', text: message }] }),
-  });
-  return new Response(await resp.text(), { status: resp.status });
-}
-
-// ── /broadcast : ส่งหาทุกคนที่แอด OA (เฟส 0 pilot — ครอบครัวเดียว) ──────
-// หมายเหตุ: ใช้ได้เมื่อ OA 1 ตัว = 1 ครอบครัว. ตอน multi-tenant ให้เปลี่ยนไปใช้
-// /push เฉพาะ caregiver ในบ้านนั้น (แยกด้วย householdId)
+// ─── phase 0 (back-compat) ────────────────────────────────────
 async function handleBroadcast(request, env) {
-  if (request.headers.get('x-app-key') !== env.APP_KEY) {
-    return new Response('unauthorized', { status: 401 });
-  }
-  let payload;
-  try {
-    payload = await request.json();
-  } catch {
-    return new Response('bad json', { status: 400 });
-  }
-  const { message } = payload || {};
-  if (!message) return new Response('missing message', { status: 400 });
-
+  if (request.headers.get('x-app-key') !== env.APP_KEY) return new Response('unauthorized', { status: 401 });
+  const body = await request.json().catch(() => null);
+  if (!body || !body.message) return new Response('missing message', { status: 400 });
   const resp = await fetch(`${LINE_API}/broadcast`, {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${env.CHANNEL_ACCESS_TOKEN}`,
-    },
-    body: JSON.stringify({ messages: [{ type: 'text', text: message }] }),
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${env.CHANNEL_ACCESS_TOKEN}` },
+    body: JSON.stringify({ messages: [{ type: 'text', text: body.message }] }),
+  });
+  return new Response(await resp.text(), { status: resp.status });
+}
+async function handlePush(request, env) {
+  if (request.headers.get('x-app-key') !== env.APP_KEY) return new Response('unauthorized', { status: 401 });
+  const body = await request.json().catch(() => null);
+  if (!body || !body.to || !body.message) return new Response('missing to/message', { status: 400 });
+  const resp = await fetch(`${LINE_API}/push`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${env.CHANNEL_ACCESS_TOKEN}` },
+    body: JSON.stringify({ to: body.to, messages: [{ type: 'text', text: body.message }] }),
   });
   return new Response(await resp.text(), { status: resp.status });
 }
 
-// ── helpers ─────────────────────────────────────────────────────
-async function lineReply(accessToken, replyToken, text) {
-  await fetch(`${LINE_API}/reply`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      replyToken,
-      messages: [{ type: 'text', text }],
-    }),
-  });
-}
-
+// ─── signature ────────────────────────────────────────────────
 async function verifySignature(channelSecret, body, signature) {
   try {
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(channelSecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    );
-    const mac = await crypto.subtle.sign(
-      'HMAC',
-      key,
-      new TextEncoder().encode(body),
-    );
+    const mac = await hmacRaw(channelSecret, body);
     const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
     return expected === signature;
   } catch {
