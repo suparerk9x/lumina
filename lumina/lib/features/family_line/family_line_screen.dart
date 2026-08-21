@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -102,6 +103,52 @@ class _FamilyLineScreenState extends State<FamilyLineScreen> {
     _refresh();
   }
 
+  Future<void> _createInvite() async {
+    setState(() => _busy = true);
+    final url = await DeviceService().createInvite();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (url == null) {
+      _snack(tr('family.inviteNotReady'));
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(tr('family.inviteByLink')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(tr('family.inviteCreated'),
+                style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              color: Colors.white,
+              child: QrImageView(data: url, size: 170),
+            ),
+            const SizedBox(height: 12),
+            SelectableText(url, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url));
+              _snack(tr('family.linkCopied'));
+            },
+            child: Text(tr('family.copyLink')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr('common.close')),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _testAlert() async {
     setState(() => _busy = true);
     final pushed = await DeviceService().alert(
@@ -135,7 +182,28 @@ class _FamilyLineScreenState extends State<FamilyLineScreen> {
           Text(tr('family.lineIntro'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary),
               textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+
+          // เชิญด้วยลิงก์ (LIFF) — ง่ายสุด
+          SizedBox(
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: _busy ? null : _createInvite,
+              icon: const Icon(Icons.link_rounded),
+              label: Text(tr('family.inviteByLink')),
+            ),
+          ),
           const SizedBox(height: 20),
+          Row(children: [
+            const Expanded(child: Divider()),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(tr('family.orManual'),
+                  style: TextStyle(fontSize: 13, color: secondary)),
+            ),
+            const Expanded(child: Divider()),
+          ]),
+          const SizedBox(height: 16),
 
           // QR แอด OA
           Center(

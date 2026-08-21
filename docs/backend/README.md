@@ -89,7 +89,36 @@ curl -X POST https://<worker>/push \
   -d '{"to":"U0123...","message":"ทดสอบจาก Demenish AI"}'
 ```
 
+---
+
+## เฟส 1 — Multi-tenant (device JWT) + LIFF onboarding
+
+Worker เวอร์ชันปัจจุบันรองรับหลายบ้าน (multi-tenant) แล้ว โดยแต่ละเครื่อง register เอง
+→ ได้ **device JWT** ไม่ต้องฝัง `APP_KEY` ในแอป (แจก APK สาธารณะได้ปลอดภัย)
+
+Endpoint: `/device/register`, `/invite`, `/join`, `/alert`, `/heartbeat`,
+`/caregiver/add`, `/caregiver/remove`, `/household`, `/liff`, `/webhook`
+Cron ทุก 1 นาที = escalation (เตือนซ้ำถ้าไม่มีใครกด "รับทราบ" ใน 3 นาที)
+
+### ตั้งค่า LIFF (ให้ลูกหลานกดลิงก์เดียวเข้า ไม่ต้อง copy userId)
+1. LINE Developers Console → สร้าง **LINE Login channel** (แยกจาก Messaging API channel)
+2. แท็บ LIFF → **Add** LIFF app:
+   - Endpoint URL = `https://demenish-line.<subdomain>.workers.dev/liff`
+   - Size = **Full**, Scope = `profile`, `openid`
+   - จะได้ **LIFF ID** (เช่น `2011179626-abcd1234`)
+3. ตั้ง var ให้ Worker: เพิ่มใน `wrangler.toml`
+   ```toml
+   [vars]
+   LIFF_ID = "<LIFF ID ที่ได้>"
+   ```
+   แล้ว `wrangler deploy`
+4. ในแอป: หน้า **แจ้งครอบครัวผ่าน LINE → "เชิญด้วยลิงก์"** จะสร้างลิงก์ `https://liff.line.me/<LIFF ID>?token=...`
+   แชร์ในกลุ่มไลน์ครอบครัว → ลูกหลานกด → LINE Login → ผูกเข้าบ้านอัตโนมัติ (ไม่ต้องกรอก ID)
+
+> ถ้ายังไม่ตั้ง `LIFF_ID` ปุ่ม "เชิญด้วยลิงก์" จะแจ้งให้ใช้วิธีกรอก userId เอง (fallback) ไปก่อน
+
 ## หมายเหตุ
 - โควตา free LINE = 300 ข้อความ/เดือน เพียงพอสำหรับ alert
 - `/webhook` ตรวจลายเซ็น `x-line-signature` ด้วย `CHANNEL_SECRET` เพื่อกันคนปลอม
-- `/push` ต้องมี header `x-app-key` ตรงกับ `APP_KEY` เท่านั้น
+- `/alert`, `/invite`, `/heartbeat`, `/caregiver/*` ใช้ **device JWT** (Bearer) — ไม่ใช้ APP_KEY
+- `/push`, `/broadcast` (เฟส 0) ยังใช้ `x-app-key` ได้ (back-compat)

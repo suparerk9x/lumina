@@ -136,6 +136,61 @@ class DeviceService {
     }
   }
 
+  /// สร้างลิงก์เชิญ (LIFF) — คืน liffUrl (null ถ้ายังไม่ตั้ง LIFF_ID บน Worker)
+  Future<String?> createInvite() async {
+    final token = await _ensureToken();
+    if (token == null) return null;
+    try {
+      final resp = await http.post(
+        Uri.parse('$workerBaseUrl/invite'),
+        headers: {
+          'content-type': 'application/json',
+          'authorization': 'Bearer $token',
+        },
+        body: '{}',
+      ).timeout(const Duration(seconds: 10));
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return data['liffUrl'] as String?;
+      }
+    } catch (e, s) {
+      _log('createInvite', e, s);
+    }
+    return null;
+  }
+
+  /// ส่ง heartbeat "วันนี้สบายดี" (วันละครั้ง) — เฉพาะเครื่องที่ตั้งค่า LINE แล้ว
+  /// ไม่ register อัตโนมัติ (จะได้ไม่สร้างบ้านให้คนที่ไม่ได้ใช้ LINE)
+  Future<void> heartbeat(String message) async {
+    final token = _token;
+    if (token == null || token.isEmpty || !isConfigured) return;
+    // gate วันละครั้งฝั่งเครื่อง (server ก็ dedupe อีกชั้น)
+    final today = _todayKey();
+    if (_box.get('lastHeartbeat') == today) return;
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$workerBaseUrl/heartbeat'),
+            headers: {
+              'content-type': 'application/json',
+              'authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'message': message}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        await _box.put('lastHeartbeat', today);
+      }
+    } catch (e, s) {
+      _log('heartbeat', e, s);
+    }
+  }
+
+  String _todayKey() {
+    final n = DateTime.now();
+    return '${n.year}-${n.month}-${n.day}';
+  }
+
   /// รายชื่อผู้ดูแลในบ้านนี้ [{userId, displayName, role}]
   Future<List<Map<String, dynamic>>> listCaregivers() async {
     final token = await _ensureToken();

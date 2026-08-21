@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/strings.dart';
 import '../../core/theme.dart';
+import '../../shared/services/device_service.dart';
+import '../../shared/storage/storage_service.dart';
 import '../../shared/utils/thai_date.dart';
 import '../assessment/assessment_screen.dart';
 import '../assessment/assessment_state.dart';
@@ -44,7 +46,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _maybeShowFlashCard();
       // เริ่มตรวจกล้อง (ระยะจอ ข้อ 4 / ง่วง ข้อ 6) ถ้าเปิดไว้ — foreground เท่านั้น
       _setMonitorsForeground(true);
+      _sendHeartbeat();
     });
+  }
+
+  /// ส่ง heartbeat "วันนี้สบายดี" วันละครั้ง (เฉพาะเครื่องที่ตั้งค่า LINE แล้ว)
+  Future<void> _sendHeartbeat() async {
+    final name = StorageService().getUserProfile().name;
+    final who = name.isNotEmpty ? name : tr('notif.someoneAtHome');
+    await DeviceService().heartbeat(trp('notif.heartbeat', {'who': who}));
   }
 
   void _setMonitorsForeground(bool value) {

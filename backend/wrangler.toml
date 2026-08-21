@@ -2,6 +2,10 @@ name = "demenish-line"
 main = "src/index.js"
 compatibility_date = "2024-11-01"
 
+# Cron — ไล่ระดับแจ้งเตือนที่ยังไม่มีใครรับทราบ (escalation)
+[triggers]
+crons = ["* * * * *"]
+
 # KV เก็บ userId ผู้ติดตาม LINE OA (เฟส 0) + ผู้ส่งข้อความล่าสุด (ใช้ตอนเทสต์)
 [[kv_namespaces]]
 binding = "USERS"

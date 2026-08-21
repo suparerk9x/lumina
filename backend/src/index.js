@@ -39,6 +39,8 @@ export default {
       if (m === 'GET' && p === '/household') return withAuth(request, env, (pl) => listHousehold(pl, env));
       if (m === 'POST' && p === '/caregiver/add') return withAuth(request, env, (pl) => addCaregiver(pl, request, env));
       if (m === 'POST' && p === '/caregiver/remove') return withAuth(request, env, (pl) => removeCaregiver(pl, request, env));
+      if (m === 'POST' && p === '/heartbeat') return withAuth(request, env, (pl) => heartbeat(pl, request, env));
+      if (m === 'GET' && p === '/liff') return liffPage(env);
       if (m === 'POST' && p === '/webhook') return handleWebhook(request, env);
       if (m === 'POST' && p === '/broadcast') return handleBroadcast(request, env);
       if (m === 'POST' && p === '/push') return handlePush(request, env);
@@ -47,7 +49,33 @@ export default {
       return new Response('error: ' + e.message, { status: 500 });
     }
   },
+
+  // Cron (ทุก 1 นาที) — ไล่ระดับการแจ้งเตือนที่ยังไม่มีใครรับทราบ
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(escalatePending(env));
+  },
 };
+
+/// escalation: ถ้า event ยังไม่ acked เกิน 3 นาที → เตือนซ้ำผู้ดูแลทุกคน (ครั้งเดียว)
+async function escalatePending(env) {
+  const now = Date.now();
+  const list = await env.DEMENISH.list({ prefix: 'ev:' });
+  for (const k of list.keys) {
+    const e = await getJson(env, k.name);
+    if (!e || e.ackBy || e.escalated) continue;
+    if (now - (e.ts || 0) < 3 * 60 * 1000) continue; // ยังไม่ถึง 3 นาที
+    const parts = k.name.split(':');
+    const hid = parts[1];
+    const eventId = parts[2];
+    const cgs = await env.DEMENISH.list({ prefix: `cg:${hid}:` });
+    for (const ck of cgs.keys) {
+      const uid = ck.name.split(':')[2];
+      await linePush(env, uid, `⚠️ ${e.message || ''}`, `ack:${hid}:${eventId}`);
+    }
+    e.escalated = true;
+    await putJson(env, k.name, e, 60 * 60 * 24 * 30);
+  }
+}
 
 // ─── helpers: response / KV ───────────────────────────────────
 function json(obj, status = 200) {
@@ -127,6 +155,55 @@ async function createInvite(payload, env) {
   return json({ inviteToken: token, liffUrl, expiresInDays: 7 });
 }
 
+// หน้า LIFF สำหรับ onboarding ลูกหลาน (กดลิงก์เดียวเข้า ไม่ต้อง copy userId)
+// ต้องสร้าง LINE Login channel + LIFF app แล้วตั้ง var LIFF_ID (ดู docs/backend)
+function liffPage(env) {
+  const liffId = env.LIFF_ID || '';
+  const html = `<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demenish AI</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  body{font-family:sans-serif;display:flex;min-height:90vh;align-items:center;justify-content:center;text-align:center;padding:24px;color:#2D3436}
+  .card{max-width:360px}.big{font-size:22px;font-weight:700;margin:12px 0}
+  .ok{color:#1B7A3D}.err{color:#C0392B}.muted{color:#6B7B8A;font-size:15px}
+  .spin{width:36px;height:36px;border:4px solid #ddd;border-top-color:#3D7F80;border-radius:50%;animation:s 1s linear infinite;margin:0 auto}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style></head>
+<body><div class="card" id="app">
+  <div class="spin"></div><div class="big">Connecting…</div>
+</div>
+<script>
+  var LIFF_ID = ${JSON.stringify(liffId)};
+  var app = document.getElementById('app');
+  function show(cls, big, sub){
+    while(app.firstChild) app.removeChild(app.firstChild);
+    var b=document.createElement('div'); b.className='big '+cls; b.textContent=big; app.appendChild(b);
+    if(sub){ var s=document.createElement('div'); s.className='muted'; s.textContent=sub; app.appendChild(s); }
+  }
+  if(!LIFF_ID){ show('err','ยังไม่ได้ตั้งค่า LIFF','LIFF is not configured yet'); }
+  else {
+    var token = new URLSearchParams(location.search).get('token');
+    liff.init({liffId: LIFF_ID}).then(function(){
+      if(!liff.isLoggedIn()){ liff.login(); return null; }
+      return liff.getProfile();
+    }).then(function(profile){
+      if(!profile) return null;
+      return fetch('/join', {method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({token: token, userId: profile.userId, displayName: profile.displayName})})
+        .then(function(r){ return r.ok ? r.json() : r.json().then(function(e){ throw new Error(e.error||'error'); }); });
+    }).then(function(res){
+      if(!res) return;
+      show('ok','✅ เชื่อมต่อสำเร็จ / Connected', 'คุณจะได้รับแจ้งเตือนจาก '+(res.householdName||'')+' • You will now receive alerts');
+    }).catch(function(err){
+      show('err','เชื่อมต่อไม่สำเร็จ / Failed', String(err.message||err));
+    });
+  }
+</script></body></html>`;
+  return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+}
+
 async function joinHousehold(request, env) {
   const body = await request.json().catch(() => ({}));
   const { token, userId, displayName } = body || {};
@@ -167,8 +244,34 @@ async function sendAlert(payload, request, env) {
     if (r.ok) pushed++;
   }
   await putJson(env, `ev:${hid}:${eventId}`,
-    { type, severity, message, ts: Date.now(), ackBy: null }, 60 * 60 * 24 * 30);
+    { type, severity, message, ts: Date.now(), ackBy: null, escalated: false },
+    60 * 60 * 24 * 30);
   return json({ ok: true, pushed, eventId });
+}
+
+// ── /heartbeat : ส่ง "วันนี้สบายดี" ให้ผู้ดูแล วันละครั้ง (เงียบ ≠ สบายใจ) ──
+async function heartbeat(payload, request, env) {
+  const hid = payload.hid;
+  const body = await request.json().catch(() => ({}));
+  const d = new Date();
+  const dayKey = `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()}`;
+  const flag = `hb:${hid}:${dayKey}`;
+  if (await env.DEMENISH.get(flag)) return json({ ok: true, sent: 0 }); // ส่งไปแล้ววันนี้
+
+  const list = await env.DEMENISH.list({ prefix: `cg:${hid}:` });
+  if (list.keys.length === 0) return json({ ok: true, sent: 0 }); // ไม่มีผู้ดูแล
+  await env.DEMENISH.put(flag, '1', { expirationTtl: 60 * 60 * 48 });
+
+  const hh = await getJson(env, `hh:${hid}`);
+  const who = (hh && hh.seniorName) || 'Someone at home';
+  const message = body.message || `${who} is doing fine today`;
+  let sent = 0;
+  for (const k of list.keys) {
+    const uid = k.name.split(':')[2];
+    const r = await linePush(env, uid, message, null);
+    if (r.ok) sent++;
+  }
+  return json({ ok: true, sent });
 }
 
 // เพิ่มผู้ดูแลเข้าบ้าน (ผูกด้วย LINE userId โดยตรง — ไม่ต้องใช้ LIFF)
