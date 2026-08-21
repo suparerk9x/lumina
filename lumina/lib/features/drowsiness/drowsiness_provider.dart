@@ -5,8 +5,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/strings.dart';
+import '../../shared/services/device_service.dart';
 import '../../shared/services/face_sampling_service.dart';
-import '../../shared/services/line_service.dart';
 import '../../shared/services/notification_service.dart';
 import '../../shared/storage/hive_boxes.dart';
 import '../../shared/storage/storage_service.dart';
@@ -136,8 +136,12 @@ class DrowsinessNotifier extends Notifier<DrowsinessState> {
 
     final name = StorageService().getUserProfile().name;
     final who = name.isNotEmpty ? name : tr('notif.someoneAtHome');
-    // เฟส 0: broadcast หาทุกคนที่แอด OA (multi-tenant จะเปลี่ยนเป็น push ต่อบ้าน)
-    await LineService().broadcast(trp('notif.drowsyLine', {'who': who}));
+    // เฟส 1: ส่ง /alert ด้วย device JWT → push เฉพาะผู้ดูแลในบ้านนี้ (ไม่ใช้ shared key)
+    await DeviceService().alert(
+      type: 'drowsy',
+      severity: 'info',
+      message: trp('notif.drowsyLine', {'who': who}),
+    );
   }
 }
 

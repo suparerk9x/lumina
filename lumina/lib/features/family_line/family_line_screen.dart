@@ -4,37 +4,120 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/strings.dart';
 import '../../core/theme.dart';
+import '../../shared/services/device_service.dart';
 import '../../shared/services/line_service.dart';
 
-/// หน้าเชื่อม LINE ครอบครัว (เฟส 0 — broadcast)
-/// ให้ลูกหลานสแกน QR แอด OA เป็นเพื่อน แล้วจะได้รับแจ้งเตือนเมื่อผู้สูงอายุมีอาการง่วง
-class FamilyLineScreen extends StatelessWidget {
+/// หน้าเชื่อม LINE ครอบครัว (เฟส 1 — multi-tenant, device JWT)
+/// ลูกหลานแอด OA → บอทตอบ userId → กรอกในแอป → รับแจ้งเตือนเฉพาะบ้านนี้
+class FamilyLineScreen extends StatefulWidget {
   const FamilyLineScreen({super.key});
 
-  Future<void> _openLine(BuildContext context) async {
-    final uri = Uri.parse(LineService().addFriendUrl);
+  @override
+  State<FamilyLineScreen> createState() => _FamilyLineScreenState();
+}
+
+class _FamilyLineScreenState extends State<FamilyLineScreen> {
+  final _idController = TextEditingController();
+  final _nameController = TextEditingController();
+  List<Map<String, dynamic>> _caregivers = [];
+  bool _loading = true;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    setState(() => _loading = true);
+    final list = await DeviceService().listCaregivers();
+    if (!mounted) return;
+    setState(() {
+      _caregivers = list;
+      _loading = false;
+    });
+  }
+
+  void _snack(String msg) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(msg)));
+
+  Future<void> _openLine() async {
     try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(Uri.parse(LineService().addFriendUrl),
+          mode: LaunchMode.externalApplication);
     } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('family.lineOpenFailed'))),
-        );
-      }
+      if (mounted) _snack(tr('family.lineOpenFailed'));
     }
   }
 
-  Future<void> _testBroadcast(BuildContext context) async {
-    final ok = await LineService()
-        .broadcast(tr('family.testBroadcastMessage'));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok
-            ? tr('family.testSent')
-            : tr('family.testNotConfigured')),
+  Future<void> _addCaregiver() async {
+    final id = _idController.text.trim();
+    if (!id.startsWith('U') || id.length < 20) {
+      _snack(tr('family.invalidId'));
+      return;
+    }
+    setState(() => _busy = true);
+    final ok =
+        await DeviceService().addCaregiver(id, displayName: _nameController.text.trim());
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      _idController.clear();
+      _nameController.clear();
+      _snack(tr('family.added'));
+      _refresh();
+    } else {
+      _snack(tr('family.addFailed'));
+    }
+  }
+
+  Future<void> _removeCaregiver(String userId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(tr('family.removeTitle')),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(tr('common.cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+            child: Text(tr('common.delete')),
+          ),
+        ],
       ),
     );
+    if (confirm != true) return;
+    await DeviceService().removeCaregiver(userId);
+    _refresh();
+  }
+
+  Future<void> _testAlert() async {
+    setState(() => _busy = true);
+    final pushed = await DeviceService().alert(
+      type: 'test',
+      severity: 'info',
+      message: tr('family.testAlertMessage'),
+    );
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (pushed < 0) {
+      _snack(tr('family.testAlertFailed'));
+    } else if (pushed == 0) {
+      _snack(tr('family.testAlertNone'));
+    } else {
+      _snack(trp('family.testAlertSent', {'n': '$pushed'}));
+    }
   }
 
   @override
@@ -43,22 +126,16 @@ class FamilyLineScreen extends StatelessWidget {
     final primary = isDark ? AppTheme.darkPrimary : AppTheme.primary;
     final secondary =
         isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
-    final line = LineService();
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('family.lineTitle'))),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          Text(
-            tr('family.lineIntro'),
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: secondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
+          Text(tr('family.lineIntro'),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: secondary),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 20),
 
           // QR แอด OA
           Center(
@@ -70,127 +147,121 @@ class FamilyLineScreen extends StatelessWidget {
                 border: Border.all(color: primary.withAlpha(60), width: 2),
               ),
               child: QrImageView(
-                data: line.addFriendUrl,
+                data: LineService().addFriendUrl,
                 version: QrVersions.auto,
-                size: 220,
-                gapless: false,
+                size: 200,
               ),
             ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(LineService.oaBasicId,
+                style: TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold, color: primary)),
           ),
           const SizedBox(height: 12),
-          Center(
-            child: Text(
-              LineService.oaBasicId,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
           SizedBox(
             height: 52,
             child: OutlinedButton.icon(
-              onPressed: () => _openLine(context),
+              onPressed: _openLine,
               icon: const Icon(Icons.open_in_new_rounded),
               label: Text(tr('family.openLineToAdd')),
             ),
           ),
-          const SizedBox(height: 28),
-
-          // ขั้นตอน
-          _StepCard(
-            steps: [
-              tr('family.step1'),
-              tr('family.step2'),
-              tr('family.step3'),
-              tr('family.step4'),
-            ],
-          ),
           const SizedBox(height: 24),
 
-          if (line.isConfigured)
-            SizedBox(
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: () => _testBroadcast(context),
-                icon: const Icon(Icons.send_rounded),
-                label: Text(tr('family.testSend')),
-              ),
+          // กรอก userId เพื่อผูก
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: primary.withAlpha(15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(tr('family.getIdStep'),
+                style: TextStyle(fontSize: 15, color: secondary)),
+          ),
+          const SizedBox(height: 16),
+          Text(tr('family.caregiverIdField'),
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _idController,
+            style: const TextStyle(fontSize: 18),
+            decoration: const InputDecoration(
+              hintText: 'Uxxxxxxxx…',
+              prefixIcon: Icon(Icons.badge_rounded),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _nameController,
+            style: const TextStyle(fontSize: 18),
+            decoration: InputDecoration(
+              hintText: tr('family.caregiverNameField'),
+              prefixIcon: const Icon(Icons.person_rounded),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _busy ? null : _addCaregiver,
+              icon: const Icon(Icons.person_add_rounded),
+              label: Text(tr('family.addCaregiver')),
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // รายชื่อผู้ดูแลที่เชื่อมแล้ว
+          Text(tr('family.linkedTitle'),
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_caregivers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(tr('family.noCaregivers'),
+                  style: TextStyle(fontSize: 16, color: secondary)),
             )
           else
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.warning.withAlpha(25),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                tr('family.notConfiguredNotice'),
-                style: TextStyle(fontSize: 14, color: secondary),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepCard extends StatelessWidget {
-  const _StepCard({required this.steps});
-
-  final List<String> steps;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).brightness == Brightness.dark
-        ? AppTheme.darkPrimary
-        : AppTheme.primary;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < steps.length; i++)
-              Padding(
-                padding: EdgeInsets.only(bottom: i == steps.length - 1 ? 0 : 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration:
-                          BoxDecoration(color: primary, shape: BoxShape.circle),
-                      child: Center(
-                        child: Text(
-                          '${i + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(steps[i],
-                            style: const TextStyle(fontSize: 17)),
-                      ),
-                    ),
-                  ],
+            ..._caregivers.map((c) {
+              final name = (c['displayName'] as String?)?.trim();
+              final userId = c['userId'] as String? ?? '';
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: Icon(Icons.chat_rounded, color: primary),
+                  title: Text(name != null && name.isNotEmpty ? name : userId,
+                      style: const TextStyle(fontSize: 17)),
+                  subtitle: name != null && name.isNotEmpty
+                      ? Text(userId,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12))
+                      : null,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        color: AppTheme.error),
+                    onPressed: () => _removeCaregiver(userId),
+                  ),
                 ),
-              ),
-          ],
-        ),
+              );
+            }),
+          const SizedBox(height: 20),
+
+          SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: _busy ? null : _testAlert,
+              icon: const Icon(Icons.send_rounded),
+              label: Text(tr('family.testSend')),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -37,6 +37,8 @@ export default {
       if (m === 'POST' && p === '/join') return joinHousehold(request, env);
       if (m === 'POST' && p === '/alert') return withAuth(request, env, (pl) => sendAlert(pl, request, env));
       if (m === 'GET' && p === '/household') return withAuth(request, env, (pl) => listHousehold(pl, env));
+      if (m === 'POST' && p === '/caregiver/add') return withAuth(request, env, (pl) => addCaregiver(pl, request, env));
+      if (m === 'POST' && p === '/caregiver/remove') return withAuth(request, env, (pl) => removeCaregiver(pl, request, env));
       if (m === 'POST' && p === '/webhook') return handleWebhook(request, env);
       if (m === 'POST' && p === '/broadcast') return handleBroadcast(request, env);
       if (m === 'POST' && p === '/push') return handlePush(request, env);
@@ -167,6 +169,28 @@ async function sendAlert(payload, request, env) {
   await putJson(env, `ev:${hid}:${eventId}`,
     { type, severity, message, ts: Date.now(), ackBy: null }, 60 * 60 * 24 * 30);
   return json({ ok: true, pushed, eventId });
+}
+
+// เพิ่มผู้ดูแลเข้าบ้าน (ผูกด้วย LINE userId โดยตรง — ไม่ต้องใช้ LIFF)
+async function addCaregiver(payload, request, env) {
+  const body = await request.json().catch(() => ({}));
+  const userId = String(body.userId || '').trim();
+  const displayName = String(body.displayName || '').slice(0, 60);
+  if (!userId.startsWith('U') || userId.length < 20) {
+    return json({ error: 'invalid userId' }, 400);
+  }
+  await putJson(env, `cg:${payload.hid}:${userId}`, {
+    displayName, role: 'member', createdAt: Date.now(),
+  });
+  return json({ ok: true });
+}
+
+// ลบผู้ดูแลออกจากบ้าน
+async function removeCaregiver(payload, request, env) {
+  const body = await request.json().catch(() => ({}));
+  const userId = String(body.userId || '').trim();
+  if (userId) await env.DEMENISH.delete(`cg:${payload.hid}:${userId}`);
+  return json({ ok: true });
 }
 
 async function listHousehold(payload, env) {
