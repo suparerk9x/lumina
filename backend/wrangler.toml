@@ -2,9 +2,10 @@ name = "demenish-line"
 main = "src/index.js"
 compatibility_date = "2024-11-01"
 
-# Cron — ไล่ระดับแจ้งเตือนที่ยังไม่มีใครรับทราบ (escalation)
+# Cron — ไล่ระดับแจ้งเตือน (escalation) อ่าน index "pending" key เดียว/รอบ
+# ทุก 2 นาที = ~720 reads/วัน (ลิมิต KV free 100k reads/วัน) ไม่ใช้ list
 [triggers]
-crons = ["* * * * *"]
+crons = ["*/2 * * * *"]
 
 # LIFF app id (สำหรับ onboarding ลูกหลานแบบกดลิงก์เดียว)
 [vars]

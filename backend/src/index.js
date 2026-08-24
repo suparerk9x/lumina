@@ -56,25 +56,30 @@ export default {
   },
 };
 
-/// escalation: ถ้า event ยังไม่ acked เกิน 3 นาที → เตือนซ้ำผู้ดูแลทุกคน (ครั้งเดียว)
+/// escalation: อ่าน index "pending" (key เดียว — ไม่ใช้ list KV เพื่อประหยัด quota)
+/// event ที่ยังค้างเกิน 3 นาที → เตือนซ้ำผู้ดูแล (ครั้งเดียว) แล้วเอาออกจาก pending
 async function escalatePending(env) {
+  const pend = await getPending(env);
+  if (pend.length === 0) return; // ปกติ: อ่าน 1 ครั้งแล้วจบ
   const now = Date.now();
-  const list = await env.DEMENISH.list({ prefix: 'ev:' });
-  for (const k of list.keys) {
-    const e = await getJson(env, k.name);
-    if (!e || e.ackBy || e.escalated) continue;
-    if (now - (e.ts || 0) < 3 * 60 * 1000) continue; // ยังไม่ถึง 3 นาที
-    const parts = k.name.split(':');
-    const hid = parts[1];
-    const eventId = parts[2];
-    const cgs = await env.DEMENISH.list({ prefix: `cg:${hid}:` });
-    for (const ck of cgs.keys) {
-      const uid = ck.name.split(':')[2];
-      await linePush(env, uid, `⚠️ ${e.message || ''}`, `ack:${hid}:${eventId}`);
+  const keep = [];
+  let changed = false;
+  for (const e of pend) {
+    const age = now - (e.ts || 0);
+    if (age > 60 * 60 * 1000) { changed = true; continue; } // ทิ้งของค้างเกิน 1 ชม.
+    if (age > 3 * 60 * 1000) {
+      // escalate: push หาผู้ดูแลในบ้านนั้น (list cg: เฉพาะตอนมี escalation จริง — เกิดไม่บ่อย)
+      const cgs = await env.DEMENISH.list({ prefix: `cg:${e.hid}:` });
+      for (const ck of cgs.keys) {
+        const uid = ck.name.split(':')[2];
+        await linePush(env, uid, `⚠️ ${e.message || ''}`, `ack:${e.hid}:${e.eventId}`);
+      }
+      changed = true; // เอาออกจาก pending (เตือนซ้ำแล้ว)
+      continue;
     }
-    e.escalated = true;
-    await putJson(env, k.name, e, 60 * 60 * 24 * 30);
+    keep.push(e); // ยังไม่ถึง 3 นาที เก็บไว้รอ
   }
+  if (changed) await setPending(env, keep);
 }
 
 // ─── helpers: response / KV ───────────────────────────────────
@@ -243,10 +248,27 @@ async function sendAlert(payload, request, env) {
     const r = await linePush(env, userId, message, `ack:${hid}:${eventId}`);
     if (r.ok) pushed++;
   }
+  const ts = Date.now();
   await putJson(env, `ev:${hid}:${eventId}`,
-    { type, severity, message, ts: Date.now(), ackBy: null, escalated: false },
+    { type, severity, message, ts, ackBy: null, escalated: false },
     60 * 60 * 24 * 30);
+  // เก็บลง index "pending" (key เดียว) เพื่อให้ cron ไม่ต้อง list KV
+  const pend = await getPending(env);
+  pend.push({ hid, eventId, ts, message });
+  await setPending(env, pend);
   return json({ ok: true, pushed, eventId });
+}
+
+// index อีเวนต์ที่ยังไม่ acked (เก็บใน key เดียว — cron อ่านครั้งเดียว/รอบ ไม่ใช้ list)
+async function getPending(env) {
+  const v = await env.DEMENISH.get('pending');
+  return v ? JSON.parse(v) : [];
+}
+async function setPending(env, arr) {
+  await env.DEMENISH.put('pending', JSON.stringify(arr));
+}
+function removePending(pend, eventId) {
+  return pend.filter((x) => x.eventId !== eventId);
 }
 
 // ── /heartbeat : ส่ง "วันนี้สบายดี" ให้ผู้ดูแล วันละครั้ง (เงียบ ≠ สบายใจ) ──
@@ -373,6 +395,10 @@ async function handleWebhook(request, env) {
         e.ackBy = userId;
         await putJson(env, key, e, 60 * 60 * 24 * 30);
       }
+      // เอาออกจาก pending (มีคนรับทราบแล้ว → ไม่ต้อง escalate)
+      const pend = await getPending(env);
+      const filtered = removePending(pend, parts[2]);
+      if (filtered.length !== pend.length) await setPending(env, filtered);
       if (ev.replyToken) await lineReply(env.CHANNEL_ACCESS_TOKEN, ev.replyToken, 'รับทราบแล้ว ขอบคุณที่ดูแลกันนะ');
       continue;
     }
