@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือเชื่อม LINE — Demenish AI</title>
+<style>
+  :root{
+    --teal:#3D7F80; --mint:#5BC5A7; --pink:#E91E63;
+    --ink:#2D3436; --muted:#6B7B8A; --bg:#F4F8F8;
+    --card:#ffffff; --line:#E3ECEC; --ok:#1B7A3D; --warn:#B7791F; --err:#C0392B;
+    --line-green:#06C755;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun",Tahoma,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.7; font-size:17px;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:0 18px 64px}
+  header{
+    background:linear-gradient(135deg,var(--teal),var(--mint));
+    color:#fff; padding:40px 18px 34px; text-align:center;
+  }
+  header .logo{font-size:44px; line-height:1}
+  header h1{margin:12px 0 6px; font-size:26px; font-weight:800}
+  header p{margin:0; opacity:.95; font-size:16px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:22px; margin:18px 0; box-shadow:0 2px 10px rgba(0,0,0,.03);
+  }
+  h2{font-size:21px; margin:26px 4px 8px; display:flex; align-items:center; gap:10px}
+  h2 .ic{font-size:24px}
+  .muted{color:var(--muted)}
+  .roles{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media(max-width:480px){.roles{grid-template-columns:1fr}}
+  .role{border:1px solid var(--line); border-radius:14px; padding:16px; background:#fff}
+  .role .big{font-size:20px; font-weight:700; margin-bottom:4px}
+  .step{display:flex; gap:16px; padding:16px 0; border-bottom:1px dashed var(--line)}
+  .step:last-child{border-bottom:0}
+  .num{
+    flex:0 0 40px; height:40px; border-radius:50%; background:var(--teal); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:19px;
+  }
+  .step .body{flex:1}
+  .step .body b{font-size:18px}
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:13px; font-weight:700}
+  .pill.green{background:#e7f7ee; color:var(--ok)}
+  .pill.line{background:#e7f9ee; color:var(--line-green)}
+  .btn{
+    display:inline-block; background:var(--line-green); color:#fff; text-decoration:none;
+    padding:13px 20px; border-radius:12px; font-weight:800; font-size:16px; margin:6px 0;
+  }
+  .btn.dark{background:var(--teal)}
+  .oa{
+    display:inline-flex; align-items:center; gap:8px; background:#f0faf3; color:var(--line-green);
+    border:1px solid #cdeed9; border-radius:10px; padding:6px 12px; font-weight:800; font-size:18px;
+  }
+  .note{border-left:4px solid var(--mint); background:#f0f8f6; padding:12px 14px; border-radius:8px; margin:10px 0}
+  .warn{border-left:4px solid var(--warn); background:#fff8ec}
+  .divider{display:flex; align-items:center; gap:12px; color:var(--muted); margin:16px 0; font-size:14px}
+  .divider::before,.divider::after{content:""; flex:1; height:1px; background:var(--line)}
+  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:15px}
+  th,td{border:1px solid var(--line); padding:10px; text-align:left; vertical-align:top}
+  th{background:#f2f7f7}
+  .flow{background:#0f2b2c; color:#cfeee6; border-radius:14px; padding:16px; font-size:14px; line-height:1.9; overflow-x:auto}
+  footer{text-align:center; color:var(--muted); font-size:13px; margin-top:30px}
+  code{background:#eef4f4; padding:2px 7px; border-radius:6px; font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🧠💗</div>
+  <h1>คู่มือเชื่อม LINE</h1>
+  <p>Demenish AI — แจ้งเตือนครอบครัวเมื่อผู้สูงอายุมีอาการง่วง</p>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <b style="font-size:19px">ระบบนี้ทำอะไร?</b>
+    <p class="muted" style="margin:8px 0 0">
+      เมื่อแอปในมือถือผู้สูงอายุตรวจพบอาการง่วง/เหนื่อยล้า ระบบจะส่งข้อความแจ้งเตือนเข้า
+      <b>LINE ของลูกหลาน</b>โดยอัตโนมัติ พร้อมปุ่มให้กด “รับทราบ” — ลูกหลานติดตั้งอะไรเพิ่มไม่ต้อง
+      แค่กดลิงก์เชื่อมครั้งเดียว
+    </p>
+    <div class="flow" style="margin-top:14px">
+      📱 มือถือผู้สูงอายุ (แอป Demenish AI)<br>
+      &nbsp;&nbsp;&nbsp;กล้องตรวจเจอ “ง่วง”<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      ☁️ ระบบส่งแจ้งเตือน → 💬 LINE ของลูกหลานทุกคนในบ้าน<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      👨‍👩‍👧 ลูกหลานกด “รับทราบ / กำลังไปดู” แล้วโทรกลับ
+    </div>
+  </div>
+
+  <h2><span class="ic">👥</span> ใครทำอะไรบ้าง</h2>
+  <div class="roles">
+    <div class="role">
+      <div class="big">👵 ผู้สูงอายุ</div>
+      <div class="muted">ลงแอปในมือถือเครื่องเดียว — <b>ไม่ต้องยุ่งกับ LINE เลย</b></div>
+    </div>
+    <div class="role">
+      <div class="big">👨‍👩‍👧 ลูกหลาน</div>
+      <div class="muted">กดลิงก์เชื่อมครั้งเดียว แล้ว<b>รับแจ้งเตือนใน LINE ตัวเอง</b></div>
+    </div>
+  </div>
+  <div class="note">💡 การตั้งค่าทั้งหมด ให้ <b>ลูกหลานเป็นคนทำบนมือถือผู้สูงอายุ</b> (ตอนไปเยี่ยม/ช่วยตั้งให้) — ทำครั้งเดียวจบ</div>
+
+  <h2><span class="ic">⚙️</span> ขั้นตอนติดตั้ง (ทำครั้งเดียว)</h2>
+  <div class="card">
+
+    <div class="step">
+      <div class="num">1</div>
+      <div class="body">
+        <b>เปิดฟีเจอร์ตรวจจับอาการง่วง</b>
+        <div class="muted">ในแอป → <b>ตั้งค่า (Settings)</b> → <b>ตรวจจับอาการง่วง</b> → เปิดสวิตช์ → อนุญาตให้ใช้กล้อง</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">2</div>
+      <div class="body">
+        <b>เชิญลูกหลาน</b> <span class="pill green">แนะนำ: วิธีลิงก์</span>
+        <div class="muted" style="margin:6px 0">
+          ตั้งค่า → <b>แจ้งครอบครัวผ่าน LINE</b> → กดปุ่ม <b>“เชิญด้วยลิงก์”</b><br>
+          → ได้ลิงก์ + QR → กด <b>คัดลอกลิงก์</b> แล้วส่งเข้า<b>กลุ่มไลน์ครอบครัว</b>
+        </div>
+        <div class="muted">ลูกหลานแต่ละคน <b>กดลิงก์นั้นใน LINE</b> → เข้าสู่ระบบ → ขึ้น “✅ เชื่อมต่อสำเร็จ” = เสร็จ (ไม่ต้องพิมพ์รหัสอะไรเลย)</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">3</div>
+      <div class="body">
+        <b>ทดสอบ</b>
+        <div class="muted">กดปุ่ม <b>“ทดสอบส่งแจ้งเตือน”</b> → ลูกหลานที่เชื่อมไว้จะได้ข้อความใน LINE ทันที ✅</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider">หรือถ้าปุ่มลิงก์มีปัญหา ใช้วิธีสำรอง</div>
+
+  <div class="card">
+    <b>วิธีสำรอง — กรอก LINE User ID เอง</b>
+    <div class="step" style="border:0;padding-top:12px">
+      <div class="num" style="background:var(--mint)">A</div>
+      <div class="body">
+        <b>แอด Official Account เป็นเพื่อน</b>
+        <div class="muted" style="margin:6px 0">ลูกหลานค้นหา / สแกน QR แล้วแอด: <span class="oa">💬 @764txpcs</span></div>
+      </div>
+    </div>
+    <div class="step" style="border:0;padding-top:0">
+      <div class="num" style="background:var(--mint)">B</div>
+      <div class="body">
+        <b>ทักบอท → รับรหัส</b>
+        <div class="muted">พิมพ์ข้อความอะไรก็ได้ส่งไป → บอทตอบ <b>LINE User ID</b> (ขึ้นต้นด้วย <code>U</code>) กลับมา</div>
+      </div>
+    </div>
+    <div class="step" style="border:0;padding-top:0">
+      <div class="num" style="background:var(--mint)">C</div>
+      <div class="body">
+        <b>กรอกในแอป</b>
+        <div class="muted">เอารหัส <code>U...</code> มากรอกในช่อง “LINE User ID ของลูกหลาน” → กด <b>เพิ่มลูกหลาน</b></div>
+      </div>
+    </div>
+  </div>
+
+  <h2><span class="ic">🔔</span> เวลาใช้งานจริง ลูกหลานจะได้อะไร</h2>
+  <div class="card" style="padding:8px 22px">
+    <div class="step"><div class="num" style="background:var(--pink)">1</div><div class="body"><b>แจ้งเตือนง่วง</b><div class="muted">เมื่อกล้องตรวจเจอผู้สูงอายุง่วง → ส่งข้อความ + ปุ่ม <b>“รับทราบ / กำลังไปดู”</b></div></div></div>
+    <div class="step"><div class="num" style="background:var(--warn)">2</div><div class="body"><b>เตือนซ้ำอัตโนมัติ</b><div class="muted">ถ้าไม่มีใครกด “รับทราบ” ภายใน 3 นาที ระบบจะเตือนซ้ำ ⚠️</div></div></div>
+    <div class="step"><div class="num" style="background:var(--ok)">3</div><div class="body"><b>“วันนี้สบายดี 🙂”</b><div class="muted">ส่งให้วันละครั้ง เพื่อให้อุ่นใจว่าปกติดี (เงียบ ≠ สบายใจ)</div></div></div>
+  </div>
+
+  <div class="note warn">
+    <b>⚠️ สำคัญ:</b> ลูกหลานต้อง<b>แอด <span style="color:var(--line-green)">@764txpcs</span> เป็นเพื่อนใน LINE ด้วย</b>
+    ไม่งั้นข้อความแจ้งเตือนจะส่งไม่เข้า (LINE ส่งได้เฉพาะคนที่เป็นเพื่อนกับบัญชีเท่านั้น)
+  </div>
+
+  <h2><span class="ic">❓</span> ปัญหาที่พบบ่อย</h2>
+  <div class="card">
+    <table>
+      <tr><th>อาการ</th><th>วิธีแก้</th></tr>
+      <tr><td>เชื่อมสำเร็จแล้ว แต่ไม่ได้รับแจ้งเตือน</td><td>ยังไม่ได้แอด <b>@764txpcs</b> เป็นเพื่อน — แอดก่อน แล้วลองกด “ทดสอบส่งแจ้งเตือน” ใหม่</td></tr>
+      <tr><td>กดลิงก์เชิญแล้วไม่เข้า</td><td>ต้องเปิดลิงก์<b>ในแอป LINE</b> (ไม่ใช่เบราว์เซอร์ธรรมดา) — ส่งลิงก์เข้าแชท LINE แล้วกดจากในนั้น</td></tr>
+      <tr><td>ฟีเจอร์กล้อง/แจ้งเตือนไม่ทำงาน</td><td>กล้องและการแจ้งเตือนใช้ได้เฉพาะบน<b>มือถือ (แอป APK)</b> เท่านั้น เวอร์ชันเว็บใช้ดู UI ได้อย่างเดียว</td></tr>
+      <tr><td>อยากเอาลูกหลานออกจากรายชื่อ</td><td>ในหน้า “แจ้งครอบครัวผ่าน LINE” → กดถังขยะข้างชื่อคนนั้น</td></tr>
+    </table>
+  </div>
+
+  <h2><span class="ic">⬇️</span> ดาวน์โหลด / ลองใช้</h2>
+  <div class="card" style="text-align:center">
+    <a class="btn" href="https://github.com/suparerk9x/lumina/releases/download/v2.0.0/demenish-ai-v2.0.0.apk">📥 โหลดแอป (Android APK)</a><br>
+    <a class="btn dark" href="https://demenish-ai.pages.dev">🌐 ลองบนเบราว์เซอร์</a>
+    <p class="muted" style="margin:14px 0 0; font-size:14px">
+      ติดตั้ง APK: เปิดไฟล์ → อนุญาต “ติดตั้งจากแหล่งที่ไม่รู้จัก” → ติดตั้ง<br>
+      Official Account: <b style="color:var(--line-green)">@764txpcs</b> (Demenish-AI)
+    </p>
+  </div>
+
+  <footer>
+    Demenish AI · แอปฝึกสมองและดูแลสุขภาพสำหรับผู้สูงอายุ<br>
+    ระบบแจ้งเตือนฟรี ผ่าน LINE
+  </footer>
+
+</div>
+</body>
+</html>
